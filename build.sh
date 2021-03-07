@@ -247,6 +247,7 @@ function make_aclean() {
 ## Generate Changelog
 function make_clog() {
 	printf "\n"
+	cd $BUILD_DIR
 	info "Generating Changelog"
 	rm -rf $CHANGELOG
 	touch $CHANGELOG
@@ -264,6 +265,7 @@ function make_clog() {
 	sed -i 's/project/ */g' $CHANGELOG
 	sed -i 's/[/]$//' $CHANGELOG
 	info "Done"
+	cd $ANYKERNEL_DIR
 }
 
 ## Generate the anykernel zip
@@ -294,7 +296,6 @@ function make_anykernel_zip() {
 	info "Moving anykernel zip to output directory"
 	mv "$ANY_ARCHIVE" "$UPLOAD_DIR"
 	printf "\n"
-	success "Anykernel zip:\n${lcyan}$ANY_ARCHIVE\n${reset}is now available in:\n${lcyan}${UPLOAD_DIR}"
 	cd $BUILD_DIR
 	printf "\n"
 }
@@ -348,7 +349,7 @@ setup_env
 
 source ${BUILD_DIR}/config
 
-compile_kernel
+#compile_kernel
 
 create_anykernel_zip
 #
