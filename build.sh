@@ -1,302 +1,250 @@
+#!/bin/bash
+# Bash Color
+green='\e[32m'
+red='\e[31m'
+yellow='\e[33m'
+blue='\e[34m'
+lgreen='\e[92m'
+lyellow='\e[93m'
+lblue='\e[94m'
+lmagenta='\e[95m'
+lcyan='\e[96m'
+blink_red='\033[05;31m'
+restore='\033[0m'
+reset='\e[0m'
 
+# NetHunter Stage 1 Kernel Build Script
+#
+# This script if heavily based on work by holyangle
+# https://gitlab.com/HolyAngel/op7
+##############################################
 
+##############################################
+# Functions
+## Pause
+function pause() {
+	local message="$@"
+	[ -z $message ] && message="Press [Enter] to continue.."
+	read -p "$message" readEnterkey
+}
 
+function info() {
+        printf "${lcyan}[   INFO   ]${reset} $*${reset}\n"
+}
 
-# Full clean
-function make_fclean() {
+function success() {
+        printf "${lgreen}[ SUCCESS  ]${reset} $*${reset}\n"
+}
+
+function warning() {
+        printf "${lyellow}[ WARNING  ]${reset} $*${reset}\n"
+}
+
+function error() {
+        printf "${lmagenta}[  ERROR   ]${reset} $*${reset}\n"
+}
+
+function question() {
+        printf "${yellow}[ QUESTION ]${reset} "
+}
+
+##############################################
+# Compile Kernel
+## Clean "out" folders
+function make_oclean() {
 	printf "\n"
-	make_nhclean
-	make_aclean
-	make_oclean
-	pause
-}
-
-# Download file via http(s); required arguments: <URL> <download directory>
-function wget_file {
-        local url=${1}
-        local dir=${2}
-        local file="${url##*/}"
-        if [ -f ${dir}/${file} ]; then
-                if ask "Existing image file found. Delete and download a new one?" "N"; then
-                        rm -f ${dir}/${file}
-                else
-                        warning "Using existing archive"
-                        return 0
-                fi
-        fi
-        info "Downloading ${file}"
-        axel --alternate -o ${dir}/${file} "$url"
-	if [ $? -eq 0 ]; then
-		printf "\n"
-		success "Download successful"
+	info "Cleaning up kernel-out & modules-out directories"
+	## Let's make sure we dont't delete the kernel source if we compile in the source tree
+	if [ "$KDIR" == "$KERNEL_OUT" ]; then
+		# Clean the source tree as well if we use it to build the kernel, i.e. we have no OUT directory
+		make -C $KDIR clean && make -C $KDIR mrproper
+		rm -f $KDIR/source
 	else
-		printf "\n"
-		error "Download failed"
-                return 1
+		rm -rf "$KERNEL_OUT"
 	fi
-	get_sha "${url}" ${dir}
-	if [ $? -eq 0 ]; then
-		printf "\n"
-		success "Download successful"
-                return 0
-	else
-		printf "\n"
-		error "Download failed"
-                return 1
-	fi
+	rm -rf "$MODULES_OUT"
+	success "Out directories removed!"
 }
 
-# Download file via http(s); required arguments: <URL> <download directory>
-function get_sha {
-        local url=${1}
-	local sha_url=${url}.sha256
-        local dir=${2}
-        local file="${url##*/}"
-        local sha_file="${sha_url##*/}"
-        info "Getting SHA"
-        if [ -f ${dir}/${sha_file} ]; then
-                rm -f ${dir}/${sha_file}
-        fi
-        axel --alternate -o ${dir}/${sha_file} "$sha_url"
-	if [ $? -ne 0 ]; then
-	        if ask "Could not verify file integrity. Continue without verification?" "Y"; then
-		        return 0
-		else
-			return 1
-		fi
-	fi
-	verify_sha256 "${sha_file}" "${dir}"
-	if [ $? -ne 0 ]; then
-	        if ask "File verification failed. File may be corrupted. Continue anyway?" "Y"; then
-		        return 0
-		else
-			return 1
-		fi
-	fi
-}
-
-# Verfify file against 256sha; required argument <sha file> <directory>
-function verify_sha256 {
-	local sha=$1
-	local dir=$2
-        info "Verifying integrity of downloaded file"
-	cd ${dir}
-        sha256sum -c ${sha} || {
-                error "Rootfs corrupted. Please run this installer again or download the file manually"
-	        cd -
-                return 1
-        }
-	cd -
-	return 0
-}
-
-# Check if $CONFIG exists and create it if not
-function get_defconfig() {
-	local defconfig
+## Clean source tree
+function make_sclean() {
 	local confdir=${KDIR}/arch/$ARCH/configs
 	printf "\n"
-        if [ ! -f ${confdir}/${CONFIG} ]; then
-		warning "${CONFIG} not found, creating."
-		select_defconfig
-		return $?
+	info "Cleaning source directory"
+	if [ -f ${confdir}/$CONFIG.old ]; then
+	        rm -f ${confdir}/$CONFIG.old
 	fi
-        return 0
+	if [ -f ${confdir}/$CONFIG.new ]; then
+	        rm -f ${confdir}/$CONFIG.new
+	fi
+	success "Source directory cleaned"
 }
 
-# Select defconfig file
+## Create kernel compilation working directories
+function setup_dirs() {
+	info "Creating new out directory"
+	mkdir -p "$KERNEL_OUT"
+	success "Created new out directory"
+	info "Creating new modules_out directory"
+	mkdir -p "$MODULES_OUT"
+	success "Created new modules_out directory"
+}
+
+## Select defconfig file
 function select_defconfig() {
-        local IFS opt options f i
+    local IFS opt options f i
 	local confdir=${KDIR}/arch/$ARCH/configs
 	info "Please select the configuration you would like to use as basis"
 	printf "\n"
-        cd $confdir
-        while IFS= read -r -d $'\0' f; do
-                options[i++]="$f"
-        done < <(find * -type f -print0 )
+    cd $confdir
+    while IFS= read -r -d $'\0' f; do
+        options[i++]="$f"
+    done < <(find * -type f -print0 )
 
-        select opt in "${options[@]}" "Cancel"; do
-                case $opt in
-                        "Cancel")
-			    cd -
-                            return 1
-                            ;;
-                        *)
-			    cd -
-			    break
-                            ;;
-                esac
-        done
+    select opt in "${options[@]}" "Cancel"; do
+        case $opt in
+        "Cancel")
+			cd -
+            return 1
+            ;;
+        *)
+		    cd -
+		    break
+            ;;
+        esac
+    done
 	info "Using ${opt} as new ${CONFIG}"
 	cp ${confdir}/${opt} ${confdir}/${CONFIG}
 	return 0
 }
 
-# Edit defconfig in kernel source directory
-function make_config() {
-	local cc
-	local tmpdir=/tmp/nethunter-kernel
+## Check if $CONFIG exists and create it if not
+function get_defconfig() {
+	local defconfig
 	local confdir=${KDIR}/arch/$ARCH/configs
-        # CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	printf "\n"
+    if [ ! -f ${confdir}/${CONFIG} ]; then
+		warning "${CONFIG} not found, creating."
+		select_defconfig
+		return $?
+	fi
+    return 0
+}
+
+## Edit .config in working directory
+function edit_config() {
+	local cc
+	printf "\n"
+    # CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
 	fi
-        get_defconfig || return 1
-	printf "\n"
-	info "Editing $CONFIG"
-	if [ -d ${tmpdir} ]; then
-		rm -rf ${tmpdir}
-	fi
-	mkdir -p ${tmpdir}
-	make -C $KDIR O="${tmpdir}" $cc $CONFIG $CONFIG_TOOL
-	if ask "Replace existing $CONFIG with this one?"; then
-		cp -f ${confdir}/$CONFIG ${confdir}/$CONFIG.old
-		cp -f ${tmpdir}/.config ${confdir}/$CONFIG
-		info "Done. Old config backed up as $CONFIG.old"
-	else
-		cp -f ${tmpdir}/.config ${confdir}/$CONFIG.new
-		info "Config saved as $CONFIG.new"
-	fi
-	pause
+    get_defconfig || return 1
+    info "Create config"
+    make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG
+	cfg_done=true
 }
 
-function apply_patch() {
-	local ret=1
-	printf "\n"
-	info "Testing $1\n"
-        patch -d${KDIR} -p1 --dry-run < $1
-	if [ $? == 0 ]; then
-		printf "\n"
-		if ask "The test run was completed successfully, apply the patch?" "Y"; then
-			patch -d${KDIR} -p1 < $1
-			ret=$?
-		else
-			ret=1
-		fi
-	else
-		printf "\n"
-		if ask "Warning: The test run completed with errors, apply the patch anyway?" "N"; then
-			patch -d${KDIR} -p1 < $1
-			ret=$?
-		else
-			ret=1
-		fi
-	fi
-	printf "\n"
-        pause
-        return $ret
-}
-
-# Show all patches in the current directory
-function show_patches() {
-	clear
-	local IFS opt f i
-	unset options
-	printf "${lblue} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n${reset}"
-	printf "${lblue} Please choose the patch to apply\n${reset}"
-	printf "${lblue} ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n${reset}"
-	printf "\n"
-        while IFS= read -r -d $'\0' f; do
-                options[i++]="$f"
-        done < <(find -L * -type f -print0 )
-}
-
-# Select a patch
-function select_patch() {
-	COLUMNS=12
-        select opt in "${options[@]}" "Return"; do
-                case $opt in
-                        "Return")
-			    cd -
-                            return 1
-                            ;;
-                        *)
-			    apply_patch $opt
-			    return 0
-                            ;;
-                esac
-        done
-}
-
-# Select kernel patch
-function patch_kernel() {
-	COLUMNS=12
-        local IFS opt options f i pd
-	printf "${lblue} ~~~~~~~~~~~~~~~~~~~~~~~~~~\n${reset}"
-	printf "${lblue} Please choose the patch\n${reset}"
-	printf "${lblue} directory closest matching\n${reset}"
-	printf "${lblue} your kernel version\n${reset}"
-	printf "${lblue} ~~~~~~~~~~~~~~~~~~~~~~~~~~\n${reset}"
-	printf "\n"
-        cd $PATCH_DIR
-        while IFS= read -r -d $'\0' f; do
-                options[i++]="$f"
-        done < <(find * -type d -print0 )
-        select opt in "${options[@]}" "Return"; do
-                case $opt in
-                        "Return")
-			    cd -
-                            return 1
-                            ;;
-                        *)
-			    cd $opt
-			    while true
-	 			do
-				    	clear
-					show_patches
-					select_patch || return 0
-			        done
-			    break
-                            ;;
-                esac
-        done
-
-	pause
-	return 0
-}
-
-# Enable ccache to speed up compilation
+## Enable ccache to speed up compilation
 function enable_ccache() {
 	if [ "$CCACHE" = true ]; then
 		if [ "$CC" == "clang" ]; then
 			CC="ccache clang"
-		else
-			if [ ! -z "${CC}" ] && [[ ${CC} != ccache* ]]; then
-				CC="ccache $CC"
-			fi
-        	        if [ ! -z "${CROSS_COMPILE}" ] && [[ ${CROSS_COMPILE} != ccache* ]]; then
-				export CROSS_COMPILE="ccache ${CROSS_COMPILE}"
-			fi
-         		if [ ! -z "${CROSS_COMPILE_ARM32}" ] && [[ ${CROSS_COMPILE_ARM32} != ccache* ]]; then
-				export CROSS_COMPILE_ARM32="ccache ${CROSS_COMPILE_ARM32}"
-			fi
-		fi
-	        info "~~~~~~~~~~~~~~~~~~"
+		    else
+            if [ ! -z "${CC}" ] && [[ ${CC} != ccache* ]]; then
+                CC="ccache $CC"
+            fi
+            if [ ! -z "${CROSS_COMPILE}" ] && [[ ${CROSS_COMPILE} != ccache* ]]; then
+                export CROSS_COMPILE="ccache ${CROSS_COMPILE}"
+            fi
+            if [ ! -z "${CROSS_COMPILE_ARM32}" ] && [[ ${CROSS_COMPILE_ARM32} != ccache* ]]; then
+                export CROSS_COMPILE_ARM32="ccache ${CROSS_COMPILE_ARM32}"
+            fi
+	    fi
+	    info "~~~~~~~~~~~~~~~~~~"
 		info " ccache enabled"
 		info "~~~~~~~~~~~~~~~~~~"
 	fi
 	return 0
 }
 
-# Function to generate a dtb image, expects output directory as argument
-function make_dtb() {
-	local dtb_dir=$1
-	if [ "$DTB_VER" == "2" ]; then
-		DTB_VER="-2"
-	elif [ ! "DTB_VER" == "-2" ]; then
-		unset DTB_VER
+## copy version file across
+function copy_version() {
+	if [ ! -z ${SRC_VERSION} ] && [ ! -z ${TARGET_VERSION} ] && [ -f ${SRC_VERSION} ]; then
+		cp -f ${SRC_VERSION} ${TARGET_VERSION}
 	fi
-	printf "\n"
-	info " Building dtb"
-	make -C $KDIR $cc -j "$THREADS" $DTB_FILES    # Don't use brackets around $DTB_FILES
-	info "Generating DTB Image"
-	$DTBTOOL $DTB_VER -o $dtb_dir/$DTB_IMG -s 2048 -p $KERNEL_OUT/scripts/dtc/ $DTB_IN/
-	rm -rf $DTB_IN/.*.tmp
-	rm -rf $DTB_IN/.*.cmd
-	rm -rf $DTB_IN/*.dtb
-	success "DTB generated"
+	return 0
 }
 
-# Generate Changelog
+## Compile the kernel
+function make_kernel() {
+	local cc
+	local confdir=${KDIR}/arch/$ARCH/configs
+	printf "\n"
+    # CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	if [ "$CC" == "clang" ]; then
+		cc="CC=clang"
+	fi
+	enable_ccache
+	echo ${CC}
+	echo ${CROSS_COMPILE}
+	echo ${CROSS_COMPILE_ARM32}
+	info "~~~~~~~~~~~~~~~~~~"
+	info " Building kernel"
+	info "~~~~~~~~~~~~~~~~~~"
+	copy_version
+	grep "CONFIG_MODULES=y" ${KERNEL_OUT}/.config >/dev/null && MODULES=true
+	## Some kernel sources do not compile into a separate $OUT directory so we set $OUT = $ KDIR
+	## This works with clean and config targets but not for a build, we'll catch this here
+	if [ "$KDIR" == "$KERNEL_OUT" ]; then
+		if [ "$CC" == "ccache clang" ]; then
+			time make -C $KDIR CC="ccache clang"  -j "$THREADS" ${MAKE_ARGS}
+			if [ "$MODULES" = true ]; then
+		    		time make -C $KDIR CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+			fi
+		else
+			time make -C $KDIR $cc -j "$THREADS" ${MAKE_ARGS}
+			if [ "$MODULES" = true ]; then
+		    		time make -C $KDIR $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+			fi
+		fi
+	else
+		if [ "$CC" == "ccache clang" ]; then
+			time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" ${MAKE_ARGS}
+			if [ "$MODULES" = true ]; then
+		    	time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+			fi
+		else
+			time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" ${MAKE_ARGS}
+			if [ "$MODULES" = true ]; then
+		    	time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+			fi
+		fi
+	fi
+	rm -f ${MODULES_OUT}/lib/modules/*/source
+	rm -f ${MODULES_OUT}/lib/modules/*/build
+	success "Kernel build completed"
+}
+
+function compile_kernel() {
+    make_oclean
+    make_sclean
+    setup_dirs
+    edit_config && make_kernel
+}
+##############################################
+
+##############################################
+# Create Anykernel Zip
+## Clean anykernel directory
+function make_aclean() {
+	printf "\n"
+	info "Cleaning up anykernel zip directory"
+	rm -rf $ANYKERNEL_DIR/Image* $ANYKERNEL_DIR/dtb $CHANGELOG ${ANYKERNEL_DIR}/modules
+	success "Anykernel directory cleaned"
+}
+
+## Generate Changelog
 function make_clog() {
 	printf "\n"
 	info "Generating Changelog"
@@ -318,153 +266,90 @@ function make_clog() {
 	info "Done"
 }
 
-# Build the NetHunter kernel zip to be extracted in the devices directory of the nethunter-installer
-function make_nethunter() {
+## Generate the anykernel zip
+function make_anykernel_zip() {
 	printf "\n"
-	make_oclean
-	make_nhclean
-	setup_dirs
-	edit_config
-	make_kernel
-	make_nhkernel_zip
-}
-
-# Build the test kernel zip using anykernel3
-function make_test() {
+	mkdir -p ${UPLOAD_DIR}
+	info "Copying kernel to anykernel zip directory"
+	cp "$KERNEL_IMAGE" "$ANYKERNEL_DIR"
+	if [ "$DO_DTBO" = true ]; then
+		info "Copying dtbo to zip directory"
+		cp "$DTBO_IMAGE" "$ANYKERNEL_DIR"
+	fi
+	if [ "$DO_DTB" = true ]; then
+		info "Generating dtb in zip directory"
+		make_dtb ${ANYKERNEL_DIR}
+	fi
+	if [ -d ${MODULES_OUT}/lib ]; then
+		info "Copying modules to zip directory"
+		mkdir -p ${ANYKERNEL_DIR}/${MODULE_DIRTREE}
+		cp -r ${MODULES_IN} ${ANYKERNEL_DIR}/${MODULE_DIRTREE}
+	fi
+	success "Done"
+	make_clog
 	printf "\n"
-	make_oclean
-	make_aclean
-	setup_dirs
-	edit_config
-	make_kernel
-	make_anykernel_zip
+	info "Creating anykernel zip file"
+	cd "$ANYKERNEL_DIR"
+	zip -r "$ANY_ARCHIVE" *
+	info "Moving anykernel zip to output directory"
+	mv "$ANY_ARCHIVE" "$UPLOAD_DIR"
+	printf "\n"
+	success "Anykernel zip:\n${lcyan}$ANY_ARCHIVE\n${reset}is now available in:\n${lcyan}${UPLOAD_DIR}"
+	cd $BUILD_DIR
+	printf "\n"
 }
 
-# Print README.md
-function print_help() {
-	pandoc ${BUILD_DIR}/README.md | lynx -stdin
+function transfert_zip() {
+	cd $UPLOAD_DIR
+	info "Copying any_kimo_${UPSTREAM_GIT_VERSION}.zip"
+	cp ${ANY_ARCHIVE} /home/pix/Dinosaure/any_kimo_${UPSTREAM_GIT_VERSION::7}.zip
 }
 
-# Main Menu
+function create_anykernel_zip() {
+    make_aclean
+    make_anykernel_zip
+	transfert_zip
+}
 ##############################################
-# Display menu
-show_menu() {
-	clear
-	printf "${lblue}"
-	printf "\t##################################################\n"
-	printf "\t##                                              ##\n"
-	printf "\t##  88      a8P         db        88        88  ##\n"
-	printf "\t##  88    .88'         d88b       88        88  ##\n"
-	printf "\t##  88   88'          d8''8b      88        88  ##\n"
-	printf "\t##  88 d88           d8'  '8b     88        88  ##\n"
-	printf "\t##  8888'88.        d8YaaaaY8b    88        88  ##\n"
-	printf "\t##  88P   Y8b      d8''''''''8b   88        88  ##\n"
-	printf "\t##  88     '88.   d8'        '8b  88        88  ##\n"
-	printf "\t##  88       Y8b d8'          '8b 888888888 88  ##\n"
-	printf "\t##                                              ##\n"
-	printf "\t####  ############# NetHunter ####################\n"
-	printf "\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-	printf "\t           K E R N E L   B U I L D E R\n"
-	printf "\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-	printf "${reset}"
-	printf "\t---------------------------------------------------\n"
-	printf "\t                   FULL BUILDS\n"
-	printf "\t---------------------------------------------------\n"
-	printf "\tN. NetHunter build = Create zip for NH-installer\n"
-	printf "\tT. Test build      = Create zip to flash in TWRP\n"
-	printf "\n"
-	printf "\t---------------------------------------------------\n"
-	printf "\t                 INDIVIDUAL STEPS\n"
-	printf "\t---------------------------------------------------\n"
-	printf "\t1. Edit default kernel config\n"
-	printf "\t2. Configure & compile kernel from scratch\n"
-	printf "\t3. Configure & recompile kernel from previous run\n"
-	printf "\t4. Apply NetHunter kernel patches\n"
-	printf "\t5. Create NetHunter zip\n"
-	printf "\t6. Create Anykernel zip\n"
-	printf "\t7. Generate Changelog\n"
-	printf "\t8. Edit Anykernel config\n"
- 	printf "\t0. Clean Environment\n"
-	printf "\n"
-	printf "\t---------------------------------------------------\n"
-	printf "\t                     OTHER\n"
-	printf "\t---------------------------------------------------\n"
-  	printf "\tS. Set up environment & download toolchains\n"
-	printf "\tH. Help\n"
-  	printf "\tE. Exit\n"
-	printf "\n"
+
+##############################################
+# Setup Env and update git as needed
+function setup_env() {
+	cd ./android_kernel_oneplus_oneplus6
+	CURRENT_DIRECTORY=$(pwd)
+
+	latest_branch=$(git --no-pager branch -r --sort='committerdate' --format='%(objectname) %(refname:lstrip=-1)' | tail -1)
+	latest_branch_id=$(echo "${latest_branch}" | cut -d" " -f1)
+	latest_branch_name=$(echo "${latest_branch}" | cut -d" " -f2)
+	current_branch=$(git --no-pager branch --sort='committerdate' --format='%(objectname) %(refname:lstrip=-1)' | tail -1)
+	current_branch_id=$(echo "${current_branch}" | cut -d" " -f1)
+	current_branch_name=$(echo "${current_branch}" | cut -d" " -f2)
+	if [[ "${current_branch_id}" == "${latest_branch_id}" ]]; then
+		info "Already up-to-date"
+	else
+		warning "Not up-to-date"
+		if [[ "${current_branch_name}" != "${latest_branch_name}" ]]; then
+			info "The Latest commit is comming from an another branches"
+			info "switching to it"
+			git checkout "${latest_branch_name}" -f
+		else
+			info "Pulling repo"
+			git pull
+		fi
+	fi
+	cd ..
+	BUILD_DIR="${CURRENT_DIRECTORY}/kali-nethunter-kernel"
 }
-# Read menu choices
-read_choice(){
-	local choice
-	read -p "Enter selection [N/T/1-8/S/H/E] " choice
-	case ${choice,,} in
-		n)
-		   clear
-		   make_nethunter
-		   ;;
-		t)
-		   clear
-		   make_test
-		   ;;
-		1)
-		   clear
-		   make_config
-		   ;;
-		2)
-		   clear
-		   make_oclean
-		   make_sclean
-		   setup_dirs
-		   edit_config && make_kernel
-		   ;;
-		3)
-		   clear
-		   if [ "$THREADS" -gt "10" ]; then
-			## limit threads to simplify debugging
-			THREADS = 10
-		   fi
-		   make_kernel
-		   ;;
-		4)
-		   clear
-		   patch_kernel
-		   ;;
-		5)
-		   clear
-		   make_nhclean
-		   make_nhkernel_zip
-		   ;;
-		6)
-		   clear
-		   make_aclean
-		   make_anykernel_zip
-		   ;;
-		7)
-		   clear
-		   make_clog
-		   ;;
-		8)
-		   clear
-		   $EDIT ${ANYKERNEL_DIR}/anykernel.sh
-		   ;;
-		0)
-		   clear
-		   make_fclean
-		   ;;
-        s)
-		   clear
-           setup_env
-           ;;
-        h)
-		   clear
-           print_help
-           ;;
-		e)
-		   printf "${restore}\n\n"
-	 	   exit 0
-		   ;;
-		*)
-		   error "Please select a valid options" && sleep 2
-	esac
-}
+##############################################
+
+##############################################
+# Main
+setup_env
+
+source ${BUILD_DIR}/config
+
+compile_kernel
+
+create_anykernel_zip
+#
+##############################################
