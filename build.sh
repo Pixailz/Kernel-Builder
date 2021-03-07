@@ -349,7 +349,7 @@ setup_env
 
 source ${BUILD_DIR}/config
 
-#compile_kernel
+compile_kernel
 
 create_anykernel_zip
 #
