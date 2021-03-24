@@ -71,11 +71,11 @@ function make_sclean() {
 	local confdir=${KDIR}/arch/$ARCH/configs
 	printf "\n"
 	info "Cleaning source directory"
-	if [ -f ${confdir}/$CONFIG.old ]; then
-			rm -f ${confdir}/$CONFIG.old
+	if [ -f ${confdir}/$BUILD_CONFIG.old ]; then
+			rm -f ${confdir}/$BUILD_CONFIG.old
 	fi
-	if [ -f ${confdir}/$CONFIG.new ]; then
-			rm -f ${confdir}/$CONFIG.new
+	if [ -f ${confdir}/$BUILD_CONFIG.new ]; then
+			rm -f ${confdir}/$BUILD_CONFIG.new
 	fi
 	success "Source directory cleaned"
 }
@@ -113,18 +113,18 @@ function select_defconfig() {
 			;;
 		esac
 	done
-	info "Using ${opt} as new ${CONFIG}"
-	cp ${confdir}/${opt} ${confdir}/${CONFIG}
+	info "Using ${opt} as new ${BUILD_CONFIG}"
+	cp ${confdir}/${opt} ${confdir}/${BUILD_CONFIG}
 	return 0
 }
 
-## Check if $CONFIG exists and create it if not
+## Check if $BUILD_CONFIG exists and create it if not
 function get_defconfig() {
 	local defconfig
 	local confdir=${KDIR}/arch/$ARCH/configs
 	printf "\n"
-	if [ ! -f ${confdir}/${CONFIG} ]; then
-		warning "${CONFIG} not found, creating."
+	if [ ! -f ${confdir}/${BUILD_CONFIG} ]; then
+		warning "${BUILD_CONFIG} not found, creating."
 		select_defconfig
 		return $?
 	fi
@@ -141,7 +141,7 @@ function edit_config() {
 	fi
 	get_defconfig || return 1
 	info "Create config"
-	make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG
+	make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG
 	cfg_done=true
 }
 
@@ -510,7 +510,7 @@ function usage() {
 if [[ -z "${1}" ]]; then
 	usage
 else
-	sed -i "/CONFIG=/c\CONFIG=\"$1\"" config
+	sed -i "/BUILD_CONFIG=/c\BUILD_CONFIG=\"$1\"" config
 fi
 
 git_update
