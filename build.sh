@@ -426,7 +426,7 @@ function get_toolchains() {
 }
 
 function setup_toolchain() {
-	if [[ -d "$TD" ]]; then
+	if [ -d "$TD" ]; then
 		get_toolchains
 	fi
 }
