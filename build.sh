@@ -510,7 +510,7 @@ function usage() {
 if [[ -z "${1}" ]]; then
 	usage
 else
-	sed -i "/CONFIG/c\CONFIG=\"$1\"" config
+	sed -i "/CONFIG=/c\CONFIG=\"$1\"" config
 fi
 
 git_update
