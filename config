@@ -3,7 +3,7 @@ CC=clang##!/bin/bash
 # Toolchains
 ##############################################
 # Toolchain root directory
-TD=/home/pix/android/toolchains
+TD=~/android/toolchains
 
 # Preferred editor
 EDIT=vi
