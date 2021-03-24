@@ -501,6 +501,18 @@ function setup_toolchain() {
 
 ##############################################
 # Main
+
+function usage() {
+	echo "${0} : ${0} <config_name>"
+	exit
+}
+
+if [[ -z "${1}" ]]; then
+	usage
+else
+	sed -i "/CONFIG/c\CONFIG=\"$1\"" config
+fi
+
 git_update
 
 setup_toolchain
