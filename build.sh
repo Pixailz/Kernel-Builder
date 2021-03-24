@@ -355,8 +355,6 @@ function verify_sha256 {
 	return 0
 }
 
-
-
 # Download file via http(s); required arguments: <URL> <download directory>
 function get_sha {
 	local url=${1}
@@ -370,19 +368,11 @@ function get_sha {
     fi
     axel --alternate -o ${dir}/${sha_file} "$sha_url"
 	if [ $? -ne 0 ]; then
-		if ask "Could not verify file integrity. Continue without verification?" "Y"; then
-			return 0
-		else
-			return 1
-		fi
+		return 0
 	fi
 	verify_sha256 "${sha_file}" "${dir}"
 	if [ $? -ne 0 ]; then
-		if ask "File verification failed. File may be corrupted. Continue anyway?" "Y"; then
-			return 0
-		else
-			return 1
-		fi
+		return 0
 	fi
 }
 
@@ -392,12 +382,7 @@ function wget_file {
     local dir=${2}
     local file="${url##*/}"
     if [ -f ${dir}/${file} ]; then
-        if ask "Existing image file found. Delete and download a new one?" "N"; then
-            rm -f ${dir}/${file}
-        else
-            warning "Using existing archive"
-            return 0
-        fi
+        rm -f ${dir}/${file}
     fi
     info "Downloading ${file}"
     axel --alternate -o ${dir}/${file} "$url"
@@ -420,7 +405,6 @@ function wget_file {
         return 1
 	fi
 }
-
 
 # Download toolchain; required arguments: "source URL" "Download type(wget/git)"
 function get_toolchain() {
