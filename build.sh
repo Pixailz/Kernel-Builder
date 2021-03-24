@@ -344,89 +344,89 @@ function git_update() {
 function get_toolchain() {
 	local url=$1
 	local type=$2
-    local TMP_DIR="${BUILD_DIR}/toolchain_archs"
+	local TMP_DIR="${BUILD_DIR}/toolchain_archs"
 	if [ ${type} == "wget" ]; then
-	    wget_file ${url} ${TMP_DIR}
+		wget_file ${url} ${TMP_DIR}
 		return $?
 	else
-	    error "Download type ${type} not availabe"
+		error "Download type ${type} not availabe"
 	fi
 }
 
 # Download all toolchains
 function get_toolchains() {
-    local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
+	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
 	mkdir -p ${ARCH_DIR}
 	## clang
-    if [ ! -z "${CLANG_SRC}" ]; then
+	if [ ! -z "${CLANG_SRC}" ]; then
 		printf "\n"
 		info "Downloading clang toolchain"
 		if [ -z "${CLANG_SRC_TYPE}" ]; then
-            CLANG_SRC_TYPE="wget"
+			CLANG_SRC_TYPE="wget"
 		fi
-	    get_toolchain ${CLANG_SRC} ${CLANG_SRC_TYPE}
-	    if [ $? -eq 0 ]; then
+		get_toolchain ${CLANG_SRC} ${CLANG_SRC_TYPE}
+		if [ $? -eq 0 ]; then
 			if [ -d ${CLANG_ROOT} ]; then
 				rm -rf ${CLANG_ROOT}
 			fi
 			if [ ! -d ${CLANG_ROOT} ]; then
-                local archive="${CLANG_SRC##*/}"
-			    mkdir -p ${CLANG_ROOT}
-		        tar -xJf ${ARCH_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
+				local archive="${CLANG_SRC##*/}"
+				mkdir -p ${CLANG_ROOT}
+				tar -xJf ${ARCH_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
 			else
 				warning "Skipping ${archive}"
 			fi
-		    info "Done"
+			info "Done"
 		fi
 	fi
 	## gcc32
-    if [ ! -z "${CROSS_COMPILE_ARM32_SRC}" ]; then
+	if [ ! -z "${CROSS_COMPILE_ARM32_SRC}" ]; then
 		printf "\n"
 		info "Downloading 32bit gcc toolchain"
 		if [ -z "${CROSS_COMPILE_ARM32_TYPE}" ]; then
-            CROSS_COMPILE_ARM32_TYPE="wget"
+			CROSS_COMPILE_ARM32_TYPE="wget"
 		fi
-	    get_toolchain ${CROSS_COMPILE_ARM32_SRC} ${CROSS_COMPILE_ARM32_TYPE}
-	    if [ $? -eq 0 ]; then
+		get_toolchain ${CROSS_COMPILE_ARM32_SRC} ${CROSS_COMPILE_ARM32_TYPE}
+		if [ $? -eq 0 ]; then
 			if [ -d ${CCD32} ]; then
 				rm -rf ${CCD32}
 			fi
 			if [ ! -d ${CCD32} ]; then
-                local archive="${CROSS_COMPILE_ARM32_SRC##*/}"
-			    mkdir -p ${CCD32}
-		    	tar -xJf ${ARCH_DIR}/${archive} -C ${CCD32} --strip-components=1
+				local archive="${CROSS_COMPILE_ARM32_SRC##*/}"
+				mkdir -p ${CCD32}
+				tar -xJf ${ARCH_DIR}/${archive} -C ${CCD32} --strip-components=1
 			else
 				warning "Skipping ${archive}"
 			fi
-		        info "Done"
+				info "Done"
 		fi
 	fi
 	## gcc64
-    if [ ! -z "${CROSS_COMPILE_SRC}" ]; then
+	if [ ! -z "${CROSS_COMPILE_SRC}" ]; then
 		printf "\n"
 		info "Downloading 64bit gcc toolchain"
 		if [ -z "${CROSS_COMPILE_SRC_TYPE}" ]; then
-            CROSS_COMPILE_SRC_TYPE="wget"
+			CROSS_COMPILE_SRC_TYPE="wget"
 		fi
-	    get_toolchain ${CROSS_COMPILE_SRC} ${CROSS_COMPILE_SRC_TYPE}
-	    if [ $? -eq 0 ]; then
+		get_toolchain ${CROSS_COMPILE_SRC} ${CROSS_COMPILE_SRC_TYPE}
+		if [ $? -eq 0 ]; then
 			if [ -d ${CCD64} ]; then
 				rm -rf ${CCD64}
 			fi
 			if [ ! -d ${CCD64} ]; then
-                local archive="${CROSS_COMPILE_SRC##*/}"
+				local archive="${CROSS_COMPILE_SRC##*/}"
 				mkdir -p ${CCD64}
-		        tar -xJf ${ARCH_DIR}/${archive} -C ${CCD64} --strip-components=1
+				tar -xJf ${ARCH_DIR}/${archive} -C ${CCD64} --strip-components=1
 			else
 				warning "Skipping ${archive}"
 			fi
-		        info "Done"
+				info "Done"
 		fi
 	fi
 }
 
 function setup_toolchain() {
-	if [ -d "$TD" ]; then
+	if [[ -d "$TD" ]]; then
 		get_toolchains
 	fi
 }
