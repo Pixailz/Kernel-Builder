@@ -340,6 +340,52 @@ function git_update() {
 ##############################################
 # Check_Toolchains
 
+# Verfify file against 256sha; required argument <sha file> <directory>
+function verify_sha256 {
+	local sha=$1
+	local dir=$2
+    info "Verifying integrity of downloaded file"
+	cd ${dir}
+    sha256sum -c ${sha} || {
+        error "Rootfs corrupted. Please run this installer again or download the file manually"
+	    cd -
+        return 1
+    }
+	cd -
+	return 0
+}
+
+
+
+# Download file via http(s); required arguments: <URL> <download directory>
+function get_sha {
+	local url=${1}
+	local sha_url=${url}.sha256
+    local dir=${2}
+    local file="${url##*/}"
+    local sha_file="${sha_url##*/}"
+    info "Getting SHA"
+	if [ -f ${dir}/${sha_file} ]; then
+        rm -f ${dir}/${sha_file}
+    fi
+    axel --alternate -o ${dir}/${sha_file} "$sha_url"
+	if [ $? -ne 0 ]; then
+		if ask "Could not verify file integrity. Continue without verification?" "Y"; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+	verify_sha256 "${sha_file}" "${dir}"
+	if [ $? -ne 0 ]; then
+		if ask "File verification failed. File may be corrupted. Continue anyway?" "Y"; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
 # Download file via http(s); required arguments: <URL> <download directory>
 function wget_file {
     local url=${1}
