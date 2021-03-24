@@ -340,6 +340,42 @@ function git_update() {
 ##############################################
 # Check_Toolchains
 
+# Download file via http(s); required arguments: <URL> <download directory>
+function wget_file {
+    local url=${1}
+    local dir=${2}
+    local file="${url##*/}"
+    if [ -f ${dir}/${file} ]; then
+        if ask "Existing image file found. Delete and download a new one?" "N"; then
+            rm -f ${dir}/${file}
+        else
+            warning "Using existing archive"
+            return 0
+        fi
+    fi
+    info "Downloading ${file}"
+    axel --alternate -o ${dir}/${file} "$url"
+	if [ $? -eq 0 ]; then
+		printf "\n"
+		success "Download successful"
+	else
+		printf "\n"
+		error "Download failed"
+        return 1
+	fi
+	get_sha "${url}" ${dir}
+	if [ $? -eq 0 ]; then
+		printf "\n"
+		success "Download successful"
+        return 0
+	else
+		printf "\n"
+		error "Download failed"
+        return 1
+	fi
+}
+
+
 # Download toolchain; required arguments: "source URL" "Download type(wget/git)"
 function get_toolchain() {
 	local url=$1
@@ -426,7 +462,7 @@ function get_toolchains() {
 }
 
 function setup_toolchain() {
-	if [[ -d "$TD" ]]; then
+	if [[ -d "${TD}" ]]; then
 		get_toolchains
 	fi
 }
