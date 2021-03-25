@@ -246,8 +246,6 @@ function make_aclean() {
 
 ## Generate Changelog
 function make_clog() {
-	printf "\n"
-	cd $BUILD_DIR
 	info "Generating Changelog"
 	rm -rf $CHANGELOG
 	touch $CHANGELOG
@@ -258,7 +256,7 @@ function make_clog() {
 		local Until_Date=`date --date="$kcl days ago" +%F`
 		printf "====================" >> $CHANGELOG;
 		printf "     $Until_Date    " >> $CHANGELOG;
-		printf "====================" >> $CHANGELOG;
+		printf "====================\n" >> $CHANGELOG;
 		git log --after=$After_Date --until=$Until_Date --pretty=tformat:"%h  %s  [%an]" --abbrev-commit --abbrev=7 >> $CHANGELOG
 		printf "" >> $CHANGELOG;
 	done

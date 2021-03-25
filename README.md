@@ -21,4 +21,3 @@ cd on it and bash build.sh
 ## TODO
 - improve banner
   - add the kernel builder (like: kimo or johan)
-- fix make_clog()
