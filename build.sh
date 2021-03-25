@@ -298,9 +298,13 @@ function make_anykernel_zip() {
 	cd "$ANYKERNEL_DIR"
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
 	zip -r "$ANY_ARCHIVE" *
-	info "Moving any_kimo_${CURRENT_BRANCH_SHORT7}.zip"
-	cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
-	printf "\n"
+	if [[ -d "${OUTPUT_ZIP_FOLDER}" ]]; then
+		info "Moving any_kimo_${CURRENT_BRANCH_SHORT7}.zip"
+		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
+		printf "\n"
+	else
+		error "${OUTPUT_ZIP_FOLDER} not found"
+	fi
 	cd $BUILD_DIR
 }
 
