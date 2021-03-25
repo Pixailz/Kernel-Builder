@@ -2,7 +2,7 @@ CC=clang##!/bin/bash
 ##############################################
 # TO CHANGE
 ##############################################
-OUTPUT_ZIP_FOLDER="/home/ftpix/Dinosaure/kernel/build"
+OUTPUT_ZIP_FOLDER="."
 
 ##############################################
 # Toolchains
