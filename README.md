@@ -10,8 +10,13 @@ git clone this repo to the kernel folder
 cd on it and bash build.sh
 
 ## TESTED KERNEL
-[kimocoder : android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)<br>
-[johanlike : DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
+[kimocoder](https://github.com/kimocoder) :
+
+- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)
+
+[johanlike](https://github.com/johanlike) :
+
+- [DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
 
 ## TODO
 - fix make_clog()
