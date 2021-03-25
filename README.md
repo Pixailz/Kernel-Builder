@@ -2,7 +2,7 @@
 
 originaly from (https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel)
 
-I have always pressed the same 2 key for building and creating an anykernel zip in this script. so to get ride of this two key pressed (waiting ~20min for just creating an anykernel zip) i move all the scripts part into my build.sh + little tricks and cool stuff, enjoy :)
+I have always pressed the same 2 key for building and (waiting ~20min) to create an anykernel zip. so to get ride of this two key pressed i move all the scripts part into my version of build.sh + little tricks and cool stuff, enjoy :)
 
 ## HOWTO
 
