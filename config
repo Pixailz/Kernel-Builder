@@ -1,5 +1,10 @@
 CC=clang##!/bin/bash
 ##############################################
+# TO CHANGE
+##############################################
+OUTPUT_ZIP_FOLDER="/home/ftpix/Dinosaure/kernel/build"
+
+##############################################
 # Toolchains
 ##############################################
 # Toolchain root directory
@@ -148,8 +153,6 @@ fi
 
 ####################################################################
 # CUSTOM                                                           #
-
-OUTPUT_ZIP_FOLDER="/home/ftpix/Dinosaure/kernel/build"
 
 cd .. && git fetch
 
