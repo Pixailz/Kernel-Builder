@@ -1,13 +1,13 @@
-# Automated kernel builder script
+# Automated kernel builder
 
-Automated building script for android kernel<br>
+originaly from (https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel)
 
-originaly from [kali-nethunter-kernel](https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel) build.sh
+I have always pressed the same 2 key for building and (waiting ~20min) to create an anykernel zip. so to get ride of this two key pressed i move all the scripts part into my version of build.sh + little tricks and cool stuff, enjoy :)
 
 ## HOWTO
 
 git clone this repo to the kernel folder
-cd on it and bash build.sh
+cd on it and do `bash build.sh`
 
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :
