@@ -1,15 +1,17 @@
 # Automated kernel builder script
 
-Automated building script for [kimocoder/android_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) android kernel<br>
-from [kali-nethunter-kernel](https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel) build.sh
+Automated building script for android kernel<br>
 
-i'm planning to use this as a cron jobs
+originaly from [kali-nethunter-kernel](https://gitlab.com/kalilinux/nethunter/build-scripts/kali-nethunter-kernel) build.sh
 
 ## HOWTO
 
-remove kali-nethunter-kernel content from [kimocoder repo](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)
-and add this repo to the folder
+git clone this repo to the kernel folder
+cd on it and bash build.sh
+
+## TESTED KERNEL
+[kimocoder : android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)<br>
+[johanlike : DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
 
 ## TODO
-- add original setup_env for downloading every toolchain
 - fix make_clog()
