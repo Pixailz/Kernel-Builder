@@ -19,4 +19,6 @@ cd on it and bash build.sh
 - [DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
 
 ## TODO
+- improve banner
+  - add the kernel builder (like: kimo or johan) to the banner
 - fix make_clog()
