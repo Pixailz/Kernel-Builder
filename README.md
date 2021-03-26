@@ -21,3 +21,5 @@ cd on it and do `bash build.sh`
 ## TODO
 - improve banner
   - add the kernel builder (like: kimo or johan)
+- add more toolchains
+  - make a list of available toolchain
