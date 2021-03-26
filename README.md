@@ -9,7 +9,8 @@ I have always pressed the same 2 key for building and (waiting ~20min) to create
 git clone this repo to the kernel folder
 cd on it and do `bash build.sh <config_file_name>`
 
-
+⚠️
+saved config are stored in the out folder, and the script clean this folder so the config may disappear
 
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :
@@ -23,5 +24,4 @@ cd on it and do `bash build.sh <config_file_name>`
 ## TODO
 - improve banner
   - add the kernel builder (like: kimo or johan)
-- add more toolchains
-  - make a list of available toolchain
+- add a saved folder, to keep the config in safe place
