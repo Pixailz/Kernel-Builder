@@ -7,7 +7,9 @@ I have always pressed the same 2 key for building and (waiting ~20min) to create
 ## HOWTO
 
 git clone this repo to the kernel folder
-cd on it and do `bash build.sh`
+cd on it and do `bash build.sh <config_file_name>`
+
+
 
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :

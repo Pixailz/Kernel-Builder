@@ -20,13 +20,47 @@ reset='\e[0m'
 ##############################################
 
 ##############################################
-# Functions
+# Utils Func
 ## Pause
 function pause() {
 	local message="$@"
 	[ -z $message ] && message="Press [Enter] to continue.."
 	read -p "$message" readEnterkey
 }
+
+## ASK
+function ask() {
+    	# https://gist.github.com/davejamesmiller/1965569
+    	while true; do
+
+        	if [ "${2:-}" = "Y" ]; then
+        		prompt="Y/n"
+        		default=Y
+        	elif [ "${2:-}" = "N" ]; then
+        		prompt="y/N"
+            		default=N
+        	else
+            		prompt="y/n"
+            		default=
+        	fi
+
+        	# Ask the question
+        	question
+        	read -p "$1 [$prompt] " REPLY
+
+        	# Default?
+        	if [ -z "$REPLY" ]; then
+        		REPLY=$default
+        	fi
+
+        	# Check if the reply is valid
+        	case "$REPLY" in
+        		Y*|y*) return 0 ;;
+        		N*|n*) return 1 ;;
+        	esac
+    	done
+}
+
 
 function info() {
 		printf "${lcyan}[   INFO   ]${reset} $*${reset}\n"
@@ -140,8 +174,14 @@ function edit_config() {
 		cc="CC=clang"
 	fi
 	get_defconfig || return 1
-	info "Create config"
-	make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG
+	if ask "Edit the kernel config?" "N"; then
+		info "Creating custom  config"
+	    make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG $CONFIG_TOOL
+	else
+		info "Create config"
+		make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG
+	fi
+
 	cfg_done=true
 }
 
@@ -505,7 +545,7 @@ function setup_toolchain() {
 # Main
 
 function usage() {
-	echo "${0} : ${0} <config_name>"
+	echo "${0} : ${0} <config_file_name>"
 	exit
 }
 
