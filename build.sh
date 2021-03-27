@@ -86,7 +86,6 @@ function question() {
 # Compile Kernel
 ## Clean "out" folders
 function make_oclean() {
-	printf "\n"
 	info "Cleaning up kernel-out & modules-out directories"
 	## Let's make sure we dont't delete the kernel source if we compile in the source tree
 	if [ "$KDIR" == "$KERNEL_OUT" ]; then
@@ -103,7 +102,6 @@ function make_oclean() {
 ## Clean source tree
 function make_sclean() {
 	local confdir=${KDIR}/arch/$ARCH/configs
-	printf "\n"
 	info "Cleaning source directory"
 	if [ -f ${confdir}/$BUILD_CONFIG.old ]; then
 			rm -f ${confdir}/$BUILD_CONFIG.old
@@ -129,7 +127,6 @@ function select_defconfig() {
 	local IFS opt options f i
 	local confdir=${KDIR}/arch/$ARCH/configs
 	info "Please select the configuration you would like to use as basis"
-	printf "\n"
 	cd $confdir
 	while IFS= read -r -d $'\0' f; do
 		options[i++]="$f"
@@ -156,7 +153,6 @@ function select_defconfig() {
 function get_defconfig() {
 	local defconfig
 	local confdir=${KDIR}/arch/$ARCH/configs
-	printf "\n"
 	if [ ! -f ${confdir}/${BUILD_CONFIG} ]; then
 		warning "${BUILD_CONFIG} not found, creating."
 		select_defconfig
@@ -168,7 +164,6 @@ function get_defconfig() {
 ## Edit .config in working directory
 function edit_config() {
 	local cc
-	printf "\n"
 	# CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
@@ -220,7 +215,6 @@ function copy_version() {
 function make_kernel() {
 	local cc
 	local confdir=${KDIR}/arch/$ARCH/configs
-	printf "\n"
 	# CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
@@ -275,7 +269,6 @@ function compile_kernel() {
 # Create Anykernel Zip
 ## Clean anykernel directory
 function make_aclean() {
-	printf "\n"
 	info "Cleaning up anykernel zip directory"
 	rm -rf $ANYKERNEL_DIR/Image* $ANYKERNEL_DIR/dtb $CHANGELOG ${ANYKERNEL_DIR}/modules ${ANYKERNEL_DIR}/*.zip
 	success "Anykernel directory cleaned"
@@ -305,7 +298,6 @@ function make_clog() {
 
 ## Generate the anykernel zip
 function make_anykernel_zip() {
-	printf "\n"
 	mkdir -p ${UPLOAD_DIR}
 	info "Copying kernel to anykernel zip directory"
 	if [[ ! -f "$KERNEL_IMAGE" ]]; then
@@ -328,7 +320,6 @@ function make_anykernel_zip() {
 	fi
 	success "Done"
 	make_clog
-	printf "\n"
 	info "Creating anykernel zip file"
 	cd "$ANYKERNEL_DIR"
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
@@ -336,7 +327,6 @@ function make_anykernel_zip() {
 	if [[ -d "${OUTPUT_ZIP_FOLDER}" ]]; then
 		info "Moving ${ANY_ARCHIVE}"
 		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
-		printf "\n"
 	else
 		error "${OUTPUT_ZIP_FOLDER} not found"
 	fi
@@ -425,20 +415,16 @@ function wget_file {
     info "Downloading ${file}"
     axel --alternate -o ${dir}/${file} "$url"
 	if [ $? -eq 0 ]; then
-		printf "\n"
 		success "Download successful"
 	else
-		printf "\n"
 		error "Download failed"
         return 1
 	fi
 	get_sha "${url}" ${dir}
 	if [ $? -eq 0 ]; then
-		printf "\n"
 		success "Download successful"
         return 0
 	else
-		printf "\n"
 		error "Download failed"
         return 1
 	fi
@@ -463,7 +449,6 @@ function get_toolchains() {
 	mkdir -p ${ARCH_DIR}
 	## clang
 	if [ ! -z "${CLANG_SRC}" ]; then
-		printf "\n"
 		info "Downloading clang toolchain"
 		if [ -z "${CLANG_SRC_TYPE}" ]; then
 			CLANG_SRC_TYPE="wget"
@@ -485,7 +470,6 @@ function get_toolchains() {
 	fi
 	## gcc32
 	if [ ! -z "${CROSS_COMPILE_ARM32_SRC}" ]; then
-		printf "\n"
 		info "Downloading 32bit gcc toolchain"
 		if [ -z "${CROSS_COMPILE_ARM32_TYPE}" ]; then
 			CROSS_COMPILE_ARM32_TYPE="wget"
@@ -507,7 +491,6 @@ function get_toolchains() {
 	fi
 	## gcc64
 	if [ ! -z "${CROSS_COMPILE_SRC}" ]; then
-		printf "\n"
 		info "Downloading 64bit gcc toolchain"
 		if [ -z "${CROSS_COMPILE_SRC_TYPE}" ]; then
 			CROSS_COMPILE_SRC_TYPE="wget"
