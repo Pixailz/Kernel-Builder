@@ -337,7 +337,7 @@ function make_anykernel_zip() {
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
 	zip -r "$ANY_ARCHIVE" *
 	if [[ -d "${OUTPUT_ZIP_FOLDER}" ]]; then
-		info "Moving any_kimo_${CURRENT_BRANCH_SHORT7}.zip"
+		info "Moving ${ANY_ARCHIVE}"
 		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
 		printf "\n"
 	else
