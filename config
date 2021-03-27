@@ -164,6 +164,7 @@ CURRENT_BRANCH=$(cd "$( dirname "${BASH_SOURCE[0]}" )/.." && git --no-pager bran
 CURRENT_BRANCH_ID=$(echo "${LATEST_BRANCH}" | cut -d" " -f1)
 CURRENT_BRANCH_SHORT7=$(echo "${CURRENT_BRANCH_ID}" | cut -c-7)
 CURRENT_BRANCH_NAME=$(echo "${LATEST_BRANCH}" | cut -d" " -f2)
+CURRENT_BRANCH_AUTHOR=$(git show -s --format="%aN")
 
 # Anykernel zip name
-ANY_ARCHIVE="any_kimo_${CURRENT_BRANCH_SHORT7}.zip"
+ANY_ARCHIVE="any_${CURRENT_BRANCH_AUTHOR}_${CURRENT_BRANCH_SHORT7}.zip"

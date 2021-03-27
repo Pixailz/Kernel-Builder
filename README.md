@@ -22,6 +22,4 @@ saved config are stored in the out folder, and the script clean this folder so t
 - [DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
 
 ## TODO
-- improve banner
-  - add the kernel builder (like: kimo or johan)
 - add a saved folder, to keep the config in safe place
