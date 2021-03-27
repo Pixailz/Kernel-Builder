@@ -154,7 +154,7 @@ fi
 ####################################################################
 # CUSTOM                                                           #
 
-CONFIG_FOLDER="saved"
+CONFIG_FOLDER="${BUILD_DIR}/saved"
 if [[ ! -d "${CONFIG_FOLDER}" ]]; then
         mkdir ${CONFIG_FOLDER}
 fi

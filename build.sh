@@ -170,8 +170,9 @@ function edit_config() {
 	fi
 	get_defconfig || return 1
 	if ask "Edit the kernel config?" "N"; then
-		info "Creating custom  config"
+		info "Creating custom config"
 	    make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
+		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
 	else
 		info "Create config"
 		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG
