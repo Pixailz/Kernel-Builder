@@ -360,7 +360,6 @@ function set_up_env() {
 }
 
 function git_update() {
-	git fetch
 	set_up_env
 	if [[ "${CURRENT_BRANCH_ID}" == "${LATEST_BRANCH_ID}" ]]; then
 		info "Already up-to-date"
