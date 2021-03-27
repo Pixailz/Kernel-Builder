@@ -176,10 +176,10 @@ function edit_config() {
 	get_defconfig || return 1
 	if ask "Edit the kernel config?" "N"; then
 		info "Creating custom  config"
-	    make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG $CONFIG_TOOL
+	    make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
 	else
 		info "Create config"
-		make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG
+		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG
 	fi
 
 	cfg_done=true
@@ -226,9 +226,6 @@ function make_kernel() {
 		cc="CC=clang"
 	fi
 	enable_ccache
-	echo ${CC}
-	echo ${CROSS_COMPILE}
-	echo ${CROSS_COMPILE_ARM32}
 	info "~~~~~~~~~~~~~~~~~~"
 	info " Building kernel"
 	info "~~~~~~~~~~~~~~~~~~"

@@ -154,6 +154,11 @@ fi
 ####################################################################
 # CUSTOM                                                           #
 
+CONFIG_FOLDER="saved"
+if [[ ! -d "${CONFIG_FOLDER}" ]]; then
+        mkdir ${CONFIG_FOLDER}
+fi
+
 cd .. && git fetch
 
 LATEST_BRANCH=$(cd "$( dirname "${BASH_SOURCE[0]}" )/.." && git --no-pager branch -r --sort='committerdate' --format='%(objectname) %(refname:lstrip=-1)' | tail -1)
