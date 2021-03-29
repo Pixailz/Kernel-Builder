@@ -32,3 +32,4 @@ Edited config file saved in `kernel_builder/saved/`
 
 ## TODO
 - add options for the anykernel zip output folder
+- add modified one the anykernel zip name, if -e flag is present
