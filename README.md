@@ -8,8 +8,11 @@ I have always pressed the same 2 key for building and (waiting ~20min) to create
 
 git clone this repo to the kernel folder
 
-do `bash build.sh` to see the help
+Usage :
+
 ```bash
+cd kernel_builder
+bash build.sh
 Usage : build.sh -c <config_file_name> [-e]
     -h : show this help
     -c : config file name to compile/edit
@@ -32,4 +35,4 @@ Edited config file saved in `kernel_builder/saved/`
 
 ## TODO
 - add options for the anykernel zip output folder
-- add modified one the anykernel zip name, if -e flag is present
+- add modified to the anykernel zip name, if -e flag is present
