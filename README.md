@@ -31,4 +31,4 @@ Edited config file saved in `kernel_builder/saved/`
 - [op6-op6t-nethunter-kernel](https://github.com/acai66/op6-op6t-nethunter-kernel)
 
 ## TODO
-- add a saved folder, to keep the config in safe place
+- nothing to do, for the moment ;)
