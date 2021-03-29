@@ -169,7 +169,7 @@ function edit_config() {
 		cc="CC=clang"
 	fi
 	get_defconfig || return 1
-	if ask "Edit the kernel config?" "N"; then
+	if "$EDIT"; then
 		info "Creating custom config"
 	    make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
 		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
@@ -341,14 +341,8 @@ function create_anykernel_zip() {
 ##############################################
 
 ##############################################
-# SetupEnv and update git as needed
-function set_up_env() {
-	BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-	source ${BUILD_DIR}/config
-}
-
+# Update git as needed
 function git_update() {
-	set_up_env
 	if [[ "${CURRENT_BRANCH_ID}" == "${LATEST_BRANCH_ID}" ]]; then
 		info "Already up-to-date"
 	else
@@ -523,16 +517,44 @@ function setup_toolchain() {
 
 ##############################################
 # Main
-
 function usage() {
-	echo "${0} : ${0} <config_file_name>"
+	printf "Usage : ${0} -c <config_file_name> [-e]\n"
+    printf "\t-h : show this help\n"
+    printf "\t-c : config file name to compile/edit\n"
+    printf "\t-e : edit the config before compiling\n"
 	exit
 }
 
-if [[ -z "${1}" ]]; then
-	usage
-else
-	sed -i "/BUILD_CONFIG=/c\BUILD_CONFIG=\"$1\"" config
+BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${BUILD_DIR}/config
+EDIT=false
+while [[ "$1" != "" ]]; do
+    case $1 in
+        -c)
+			CONFIG=true
+            shift
+            if [[ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]]; then
+				printf "config file ${1} not found"
+                usage
+            else
+				export BUILD_CONFIG="${1}"
+			fi
+            ;;
+        -e)
+            EDIT=true
+            ;;
+        -h)
+            usage
+            ;;
+        *)
+            echo "Wrong args"
+            ;;
+    esac
+    shift
+done
+
+if [[ ! "$CONFIG" ]]; then
+    usage
 fi
 
 git_update

@@ -59,9 +59,6 @@ export LOCALVERSION=-NetHunter
 # Kernel source directory
 KDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
 
-# build config
-BUILD_CONFIG=nethunter_defconfig
-
 # Copy "SRC_VERSION" to  "TARGET_VERSION" if kernel makefile expects it
 SRC_VERSION=
 TARGET_VERSION=

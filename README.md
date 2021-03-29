@@ -7,7 +7,14 @@ I have always pressed the same 2 key for building and (waiting ~20min) to create
 ## HOWTO
 
 git clone this repo to the kernel folder
-cd on it and do `bash build.sh <config_file_name>`
+
+do `bash build.sh` to see the help
+```bash
+Usage : build.sh -c <config_file_name> [-e]
+    -h : show this help
+    -c : config file name to compile/edit
+    -e : edit the config before compiling
+```
 
 Edited config file saved in `kernel_builder/saved/`
 ## TESTED KERNEL
