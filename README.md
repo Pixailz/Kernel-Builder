@@ -6,10 +6,7 @@ I have always pressed the same 2 key for building and (waiting ~20min) to create
 
 ## HOWTO
 
-git clone this repo to the kernel folder
-
-Usage :
-
+git clone this repo to the kernel folder, then :
 ```bash
 cd kernel_builder
 bash build.sh
