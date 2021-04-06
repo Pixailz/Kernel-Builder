@@ -22,7 +22,7 @@ Edited config file saved in `kernel_builder/saved/`
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :
 
-- [android_kernel_oneplus_sdm845](https://github.com/kimocoder/android_kernel_oneplus_sdm845)
+- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)
 
 [johanlike](https://github.com/johanlike) :
 
