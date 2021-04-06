@@ -36,3 +36,5 @@ Edited config file saved in `kernel_builder/saved/`
 - rework update
   - -u functioning
   - fix when new update in other branch
+- handle error
+
