@@ -169,7 +169,7 @@ function edit_config() {
 		cc="CC=clang"
 	fi
 	get_defconfig || return 1
-	if "$EDITION"; then
+	if [[ "$EDITION" ]]; then
 		info "Creating custom config"
 		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
 		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
