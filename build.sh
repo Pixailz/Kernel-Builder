@@ -30,35 +30,35 @@ function pause() {
 
 ## ASK
 function ask() {
-    	# https://gist.github.com/davejamesmiller/1965569
-    	while true; do
+	# https://gist.github.com/davejamesmiller/1965569
+	while true; do
 
-        	if [ "${2:-}" = "Y" ]; then
-        		prompt="Y/n"
-        		default=Y
-        	elif [ "${2:-}" = "N" ]; then
-        		prompt="y/N"
-            		default=N
-        	else
-            		prompt="y/n"
-            		default=
-        	fi
+		if [ "${2:-}" = "Y" ]; then
+			prompt="Y/n"
+			default=Y
+		elif [ "${2:-}" = "N" ]; then
+			prompt="y/N"
+				default=N
+		else
+				prompt="y/n"
+				default=
+		fi
 
-        	# Ask the question
-        	question
-        	read -p "$1 [$prompt] " REPLY
+		# Ask the question
+		question
+		read -p "$1 [$prompt] " REPLY
 
-        	# Default?
-        	if [ -z "$REPLY" ]; then
-        		REPLY=$default
-        	fi
+		# Default?
+		if [ -z "$REPLY" ]; then
+			REPLY=$default
+		fi
 
-        	# Check if the reply is valid
-        	case "$REPLY" in
-        		Y*|y*) return 0 ;;
-        		N*|n*) return 1 ;;
-        	esac
-    	done
+		# Check if the reply is valid
+		case "$REPLY" in
+			Y*|y*) return 0 ;;
+			N*|n*) return 1 ;;
+		esac
+	done
 }
 
 
@@ -171,7 +171,7 @@ function edit_config() {
 	get_defconfig || return 1
 	if "$EDIT"; then
 		info "Creating custom config"
-	    make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
+		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
 		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
 	else
 		info "Create config"
@@ -325,11 +325,12 @@ function make_anykernel_zip() {
 	cd "$ANYKERNEL_DIR"
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
 	zip -r "$ANY_ARCHIVE" *
-	if [[ -d "${OUTPUT_ZIP_FOLDER}" ]]; then
-		info "Moving ${ANY_ARCHIVE}"
+	if [[ "$OUTPUTED" ]]; then
+		info "Copying ${ANY_ARCHIVE} to ${OUTPUT_ZIP_FOLDER}"
 		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
 	else
-		error "${OUTPUT_ZIP_FOLDER} not found"
+		info "Copying ${ANY_ARCHIVE} to ${HOME}"
+		cp ${ANY_ARCHIVE} ${HOME}
 	fi
 	cd $BUILD_DIR
 }
@@ -367,13 +368,13 @@ function git_update() {
 function verify_sha256 {
 	local sha=$1
 	local dir=$2
-    info "Verifying integrity of downloaded file"
+	info "Verifying integrity of downloaded file"
 	cd ${dir}
-    sha256sum -c ${sha} || {
-        error "Rootfs corrupted. Please run this installer again or download the file manually"
-	    cd -
-        return 1
-    }
+	sha256sum -c ${sha} || {
+		error "Rootfs corrupted. Please run this installer again or download the file manually"
+		cd -
+		return 1
+	}
 	cd -
 	return 0
 }
@@ -382,14 +383,14 @@ function verify_sha256 {
 function get_sha {
 	local url=${1}
 	local sha_url=${url}.sha256
-    local dir=${2}
-    local file="${url##*/}"
-    local sha_file="${sha_url##*/}"
-    info "Getting SHA"
+	local dir=${2}
+	local file="${url##*/}"
+	local sha_file="${sha_url##*/}"
+	info "Getting SHA"
 	if [ -f ${dir}/${sha_file} ]; then
-        rm -f ${dir}/${sha_file}
-    fi
-    axel --alternate -o ${dir}/${sha_file} "$sha_url"
+		rm -f ${dir}/${sha_file}
+	fi
+	axel --alternate -o ${dir}/${sha_file} "$sha_url"
 	if [ $? -ne 0 ]; then
 		return 0
 	fi
@@ -401,27 +402,27 @@ function get_sha {
 
 # Download file via http(s); required arguments: <URL> <download directory>
 function wget_file {
-    local url=${1}
-    local dir=${2}
-    local file="${url##*/}"
-    if [ -f ${dir}/${file} ]; then
-        rm -f ${dir}/${file}
-    fi
-    info "Downloading ${file}"
-    axel --alternate -o ${dir}/${file} "$url"
+	local url=${1}
+	local dir=${2}
+	local file="${url##*/}"
+	if [ -f ${dir}/${file} ]; then
+		rm -f ${dir}/${file}
+	fi
+	info "Downloading ${file}"
+	axel --alternate -o ${dir}/${file} "$url"
 	if [ $? -eq 0 ]; then
 		success "Download successful"
 	else
 		error "Download failed"
-        return 1
+		return 1
 	fi
 	get_sha "${url}" ${dir}
 	if [ $? -eq 0 ]; then
 		success "Download successful"
-        return 0
+		return 0
 	else
 		error "Download failed"
-        return 1
+		return 1
 	fi
 }
 
@@ -519,42 +520,55 @@ function setup_toolchain() {
 # Main
 function usage() {
 	printf "Usage : ${0} -c <config_file_name> [-e]\n"
-    printf "\t-h : show this help\n"
-    printf "\t-c : config file name to compile/edit\n"
-    printf "\t-e : edit the config before compiling\n"
+	printf "\t-h : show this help\n"
+	printf "\t-c : config file name to compile/edit\n"
+	printf "\t-e : edit the config before compiling\n"
+	printf "\t-o : output of the anykernel zip\n"
+	printf "\t(only accept absolute path)\n"
 	exit
 }
 
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
-EDIT=false
+
 while [[ "$1" != "" ]]; do
-    case $1 in
-        -c)
+	case $1 in
+		-c)
 			CONFIG=true
-            shift
-            if [[ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]]; then
-				printf "config file ${1} not found"
-                usage
-            else
+			shift
+			if [[ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]]; then
+				error "config file ${1} not found"
+				usage
+			else
 				export BUILD_CONFIG="${1}"
 			fi
-            ;;
-        -e)
-            EDIT=true
-            ;;
-        -h)
-            usage
-            ;;
-        *)
-            echo "Wrong args"
-            ;;
-    esac
-    shift
+			;;
+		-e)
+			EDIT=true
+			;;
+		-o)
+			OUTPUTED=true
+			shift
+			if [[ -z "$1" ]]; then
+				error "$1 folder dosen't exist."
+				usage
+			else
+				export OUTPUT_ZIP_FOLDER="$1"
+			fi
+			;;
+		-h)
+			usage
+			;;
+		*)
+			error "Wrong args"
+			usage
+			;;
+	esac
+	shift
 done
 
 if [[ ! "$CONFIG" ]]; then
-    usage
+	usage
 fi
 
 git_update

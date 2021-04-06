@@ -14,6 +14,8 @@ Usage : build.sh -c <config_file_name> [-e]
     -h : show this help
     -c : config file name to compile/edit
     -e : edit the config before compiling
+    -o : output of the anykernel zip
+    (only accept absolute path)
 ```
 
 Edited config file saved in `kernel_builder/saved/`
@@ -31,6 +33,5 @@ Edited config file saved in `kernel_builder/saved/`
 - [op6-op6t-nethunter-kernel](https://github.com/acai66/op6-op6t-nethunter-kernel)
 
 ## TODO
-- add options for the anykernel zip output folder
 - add modified to the anykernel zip name, if -e flag is present
 - add -u to update OR NOT
