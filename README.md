@@ -34,3 +34,4 @@ Edited config file saved in `kernel_builder/saved/`
 - add options for the anykernel zip output folder
 - add modified to the anykernel zip name, if -e flag is present
 - fix when `CURRENT_BRANCH_AUTHOR` have space
+- add -u to update OR NOT
