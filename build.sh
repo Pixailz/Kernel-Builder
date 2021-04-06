@@ -584,7 +584,7 @@ fi
 
 setup_toolchain
 
-#compile_kernel
+compile_kernel
 
 create_anykernel_zip
 #
