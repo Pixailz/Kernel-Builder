@@ -14,8 +14,8 @@ Usage : build.sh -c <config_file_name> [-e]
     -h : show this help
     -c : config file name to compile/edit
     -e : edit the config before compiling
-    -o : output of the anykernel zip
-    (only accept absolute path)
+    -o : output of the anykernel zip (only accept absolute path)
+    -u : update repo
 ```
 
 Edited config file saved in `kernel_builder/saved/`
@@ -34,4 +34,3 @@ Edited config file saved in `kernel_builder/saved/`
 
 ## TODO
 - add modified to the anykernel zip name, if -e flag is present
-- add -u to update OR NOT

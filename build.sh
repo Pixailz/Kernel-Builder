@@ -523,14 +523,15 @@ function usage() {
 	printf "\t-h : show this help\n"
 	printf "\t-c : config file name to compile/edit\n"
 	printf "\t-e : edit the config before compiling\n"
-	printf "\t-o : output of the anykernel zip\n"
-	printf "\t(only accept absolute path)\n"
+	printf "\t-o : output of the anykernel zip (only accept absolute path)\n"
+	printf "\t-u : update repo\n"
 	exit
 }
 
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
-
+EDIT=false
+UPDATE=false
 while [[ "$1" != "" ]]; do
 	case $1 in
 		-c)
@@ -556,6 +557,9 @@ while [[ "$1" != "" ]]; do
 				export OUTPUT_ZIP_FOLDER="$1"
 			fi
 			;;
+		-u)
+			UPDATE=true
+			;;
 		-h)
 			usage
 			;;
@@ -571,7 +575,9 @@ if [[ ! "$CONFIG" ]]; then
 	usage
 fi
 
-git_update
+if [[ "$UPDATE" ]]; then
+	git_update
+fi
 
 setup_toolchain
 
