@@ -33,4 +33,6 @@ Edited config file saved in `kernel_builder/saved/`
 - [op6-op6t-nethunter-kernel](https://github.com/acai66/op6-op6t-nethunter-kernel)
 
 ## TODO
-nothing, at this time ;)
+- rework update
+  - -u functioning
+  - fix when new update in other branch
