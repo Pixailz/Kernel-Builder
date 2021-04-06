@@ -169,7 +169,7 @@ function edit_config() {
 		cc="CC=clang"
 	fi
 	get_defconfig || return 1
-	if "$EDIT"; then
+	if "$EDITION"; then
 		info "Creating custom config"
 		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
 		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
@@ -530,7 +530,6 @@ function usage() {
 
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
-EDIT=false
 UPDATE=false
 while [[ "$1" != "" ]]; do
 	case $1 in
@@ -545,7 +544,7 @@ while [[ "$1" != "" ]]; do
 			fi
 			;;
 		-e)
-			EDIT=true
+			EDITION=true
 			;;
 		-o)
 			OUTPUTED=true
@@ -575,13 +574,17 @@ if [[ ! "$CONFIG" ]]; then
 	usage
 fi
 
+if [[ "$EDITION" ]]; then
+	export ANY_ARCHIVE=$(echo $ANY_ARCHIVE | sed 's/.zip/-edited.zip/')
+fi
+
 if [[ "$UPDATE" ]]; then
 	git_update
 fi
 
 setup_toolchain
 
-compile_kernel
+#compile_kernel
 
 create_anykernel_zip
 #
