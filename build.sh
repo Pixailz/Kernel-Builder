@@ -473,7 +473,6 @@ function get_toolchains_custom() {
 }
 # Download all toolchains
 function get_toolchains_default() {
-	source "${TOOLCHAIN_CONFIG}/clang-10.0"
 	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
 	mkdir -p ${ARCH_DIR}
 	## clang
@@ -544,18 +543,17 @@ function get_toolchains_default() {
 function load_toolchain_default() {
 	source "${TOOLCHAIN_CONFIG}/gcc32"
 	source "${TOOLCHAIN_CONFIG}/gcc64"
+	source "${TOOLCHAIN_CONFIG}/clang-10.0"
 }
 
 function setup_toolchain() {
 	load_toolchain_default
-	if [[ "$TOOLCHAIN_NAME" == "default" ]]; then
-		source "${TOOLCHAIN_CONFIG}/clang-10.0"
-	else
-		source "${TOOLCHAIN_CONFIG}/${TOOLCHAIN_NAME}"
-	fi
 	if [[ ! -d "${TD}" ]]; then
 		error "$TD don't exist"
 		get_toolchains_default
+	fi
+	if [[ "${CUSTOM_TOOLCHAIN}" ]]; then
+		source "${TOOLCHAIN_CONFIG}/${TOOLCHAIN_NAME}"
 	fi
 	if [[ ! -d "$CLANG_ROOT" ]]; then
 	    error "$CLANG_ROOT don't exist"
