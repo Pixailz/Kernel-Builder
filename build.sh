@@ -432,14 +432,48 @@ function get_toolchain() {
 	local TMP_DIR="${BUILD_DIR}/toolchain_archs"
 	if [ ${type} == "wget" ]; then
 		wget_file ${url} ${TMP_DIR}
-		return $?
+		if [ $? -eq 0 ]; then
+			if [ -d ${CLANG_ROOT} ]; then
+				rm -rf ${CLANG_ROOT}
+			fi
+			if [ ! -d ${CLANG_ROOT} ]; then
+				local archive="${CLANG_SRC##*/}"
+				mkdir -p ${CLANG_ROOT}
+				tar -xJf ${ARCH_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
+			else
+				warning "Skipping ${archive}"
+			fi
+			info "Done"
+		fi
+	elif [ ${type} == "git" ]; then
+		git clone ${url} ${TMP_DIR}
+		if [ $? -eq 0 ]; then
+			if [ ! -d ${CLANG_ROOT} ]; then
+				mkdir -p ${CLANG_ROOT}
+			fi
+			mv ${TMP_DIR}/* ${CLANG_ROOT}
+			info "Done"
+		fi
 	else
 		error "Download type ${type} not availabe"
 	fi
 }
 
+function get_toolchains_custom() {
+	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
+	mkdir -p ${ARCH_DIR}
+	## clang
+	if [ ! -z "${CLANG_SRC}" ]; then
+		info "Downloading clang toolchain"
+		if [ -z "${CLANG_SRC_TYPE}" ]; then
+			CLANG_SRC_TYPE="wget"
+		fi
+		get_toolchain ${CLANG_SRC} ${CLANG_SRC_TYPE}
+	fi
+}
 # Download all toolchains
-function get_toolchains() {
+function get_toolchains_default() {
+	source "${TOOLCHAIN_CONFIG}/clang-10.0"
 	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
 	mkdir -p ${ARCH_DIR}
 	## clang
@@ -507,9 +541,25 @@ function get_toolchains() {
 	fi
 }
 
+function load_toolchain_default() {
+	source "${TOOLCHAIN_CONFIG}/gcc32"
+	source "${TOOLCHAIN_CONFIG}/gcc64"
+}
+
 function setup_toolchain() {
+	load_toolchain_default
+	if [[ "$TOOLCHAIN_NAME" == "default" ]]; then
+		source "${TOOLCHAIN_CONFIG}/clang-10.0"
+	else
+		source "${TOOLCHAIN_CONFIG}/${TOOLCHAIN_NAME}"
+	fi
 	if [[ ! -d "${TD}" ]]; then
-		get_toolchains
+		error "$TD don't exist"
+		get_toolchains_default
+	fi
+	if [[ ! -d "$CLANG_ROOT" ]]; then
+	    error "$CLANG_ROOT don't exist"
+		get_toolchains_custom
 	fi
 }
 #
@@ -517,18 +567,34 @@ function setup_toolchain() {
 
 ##############################################
 # Main
+
+: '
+for toolchain in $(ls $TOOLCHAIN_CONFIG); do
+        source $TOOLCHAIN_CONFIG/$toolchain
+done
+'
+
+function list_toolchains() {
+	info "Available toolchain config"
+	for toolchain in $(ls $TOOLCHAIN_CONFIG); do
+		printf "\t$toolchain\n"
+	done
+}
+
 function usage() {
-	printf "Usage : ${0} -c <config_file_name> [-e]\n"
+	printf "Usage : ${0} -c <config_file_name> [[-e] [-o <path_to_output_folder>] [-u]]\n"
 	printf "\t-h : show this help\n"
 	printf "\t-c : config file name to compile/edit\n"
 	printf "\t-e : edit the config before compiling\n"
 	printf "\t-o : output of the anykernel zip (only accept absolute path)\n"
 	printf "\t-u : update repo\n"
+	printf "\t-t : specify toolchain\n"
 	exit
 }
 
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
+TOOLCHAIN_NAME="default"
 while [[ "$1" != "" ]]; do
 	case $1 in
 		-c)
@@ -539,6 +605,23 @@ while [[ "$1" != "" ]]; do
 				usage
 			else
 				export BUILD_CONFIG="${1}"
+			fi
+			;;
+		-t)
+			CUSTOM_TOOLCHAIN=true
+			shift
+			if [[ ! -z "$1" ]]; then
+				if [[ -f "${TOOLCHAIN_CONFIG}/${1}" ]]; then
+					TOOLCHAIN_NAME="${1}"
+				else
+					error "toolchain config \"${1}\" not found\n"
+					list_toolchains
+					exit
+				fi
+			else
+				list_toolchains
+				printf "\n"
+				usage
 			fi
 			;;
 		-e)
