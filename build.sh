@@ -347,12 +347,11 @@ function git_update() {
 	if [[ "${CURRENT_BRANCH_ID}" == "${LATEST_BRANCH_ID}" ]]; then
 		info "Already up-to-date"
 	else
-		warning "Not up-to-date"
+		info "Not up-to-date"
 		if [[ "${CURRENT_BRANCH_NAME}" != "${LATEST_BRANCH_NAME}" ]]; then
 			info "The Latest commit is comming from an another branches"
 			info "switching to it"
-			git checkout "${LATEST_BRANCH_NAME}" -f
-			git pull
+			git reset --hard "${LATEST_BRANCH_NAME}"
 		else
 			info "Pulling repo"
 			git reset --hard HEAD && git pull
