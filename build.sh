@@ -464,7 +464,7 @@ function get_toolchains_custom() {
 	mkdir -p ${ARCH_DIR}
 	## clang
 	if [ ! -z "${CLANG_SRC}" ]; then
-		info "Downloading clang toolchain"
+		info "Downloading ${TOOLCHAIN_NAME} toolchain"
 		if [ -z "${CLANG_SRC_TYPE}" ]; then
 			CLANG_SRC_TYPE="wget"
 		fi
