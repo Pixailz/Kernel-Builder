@@ -8,6 +8,11 @@ TD=~/android/toolchains
 # Preferred editor
 EDIT=vi
 
+TOOLCHAIN_CONFIG=$(cd ./toolchains && pwd)
+
+## "CC=clang" cannot be exported - we'll pass it to make in the function make_kernel if "CC" is set to "clang"
+CC=clang
+
 # Architecture
 export ARCH=arm64
 export SUBARCH=arm64
@@ -15,37 +20,8 @@ export SUBARCH=arm64
 # Enable ccache to speed up compilation
 CCACHE=false
 
-# Clang
-export CLANG_ROOT=${TD}/clang-10.0
-export CLANG_PATH=${CLANG_ROOT}/bin
-export PATH=${CLANG_PATH}:${PATH}
-export LD_LIBRARY_PATH=${CLANG_ROOT}/lib64:$LD_LIBRARY_PATH
-export CLANG_TRIPLE=aarch64-linux-gnu-
-## "CC=clang" cannot be exported - we'll pass it to make in the function make_kernel if "CC" is set to "clang"
-CC=clang
-## Source repository:
-CLANG_SRC="https://images.kali.org/nethunter/toolchains/google_clang-10.0.4.tar.xz"
-CLANG_SRC_TYPE="wget"
-
-# GCC 64bit
-## arm64 cross compiler directory:
-CCD64="${TD}/aarch64-4.9"
-export CROSS_COMPILE=${CCD64}/bin/aarch64-linux-android-
-## Source repository:
-CROSS_COMPILE_SRC="https://images.kali.org/nethunter/toolchains/google_aarch64-4.9.tar.xz"
-CROSS_COMPILE_SRC_TYPE="wget"
-
-# GCC 32bit
-## armhf cross compiler directory:
-CCD32="${TD}/armhf-4.9"
-export CROSS_COMPILE_ARM32=${CCD32}/bin/arm-linux-androideabi-
-## Source repository:
-CROSS_COMPILE_ARM32_SRC="https://images.kali.org/nethunter/toolchains/google_armhf-4.9.tar.xz"
-CROSS_COMPILE_ARM32_TYPE="wget"
-
 # Kernel local name
 export LOCALVERSION=-NetHunter
-
 
 ##############################################
 # Environment
