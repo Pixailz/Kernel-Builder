@@ -75,7 +75,7 @@ function warning() {
 }
 
 function error() {
-		printf "${lmagenta}[  ERROR   ]${reset} $*${reset}\n"
+		printf "${red}[  ERROR   ]${reset} $*${reset}\n"
 }
 
 function question() {
