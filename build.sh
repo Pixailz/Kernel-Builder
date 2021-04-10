@@ -446,7 +446,7 @@ function get_toolchain() {
 			info "Done"
 		fi
 	elif [ ${type} == "git" ]; then
-		git clone ${url} ${TMP_DIR}
+		git clone ${url} "${TMP_DIR}/${TOOLCHAIN_NAME}"
 		if [ $? -eq 0 ]; then
 			if [ ! -d ${CLANG_ROOT} ]; then
 				mkdir -p ${CLANG_ROOT}
