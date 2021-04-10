@@ -34,7 +34,6 @@ Edited config file saved in `kernel_builder/saved/`
 
 ## TODO
 - rework update
-  - -u functioning
   - fix when new update in other branch
 - handle error
 - add multiple-toolchains
