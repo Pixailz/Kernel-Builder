@@ -530,7 +530,6 @@ function usage() {
 
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
-UPDATE=false
 while [[ "$1" != "" ]]; do
 	case $1 in
 		-c)
