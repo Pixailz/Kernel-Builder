@@ -473,7 +473,7 @@ function get_toolchain() {
 			if [ ! -d ${CLANG_ROOT} ]; then
 				mkdir -p ${CLANG_ROOT}
 			fi
-			tar -xJf ${TMP_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
+			tar -xzvf ${TMP_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
 			exit
 		else
 			error "Download failed"
