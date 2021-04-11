@@ -451,7 +451,7 @@ function get_toolchain() {
 			if [ ! -d ${CLANG_ROOT} ]; then
 				mkdir -p ${CLANG_ROOT}
 			fi
-			mv ${TMP_DIR}/* ${CLANG_ROOT}
+			mv ${TMP_DIR}/${TOOLCHAIN_NAME}/* ${CLANG_ROOT}
 			info "Done"
 		fi
 	else
