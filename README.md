@@ -16,23 +16,20 @@ Usage : build.sh -c <config_file_name> [-e]
     -e : edit the config before compiling
     -o : output of the anykernel zip (only accept absolute path)
     -u : update repo
+    -t : specify toolchain
 ```
 
 Edited config file saved in `kernel_builder/saved/`
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :
-
-- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)
+- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) 
 
 [johanlike](https://github.com/johanlike) :
-
 - [DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
 
 [acai66](https://github.com/acai66) :
-
 - [op6-op6t-nethunter-kernel](https://github.com/acai66/op6-op6t-nethunter-kernel)
 
 ## TODO
 - handle error
-- add multiple-toolchains
-
+- fix [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) not working ... :'(
