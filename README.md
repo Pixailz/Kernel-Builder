@@ -34,4 +34,5 @@ Edited config file saved in `kernel_builder/saved/`
 - handle error
 - fix [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) not working ... :'(
 - fix when folder is created but empty (for toolchain)
+- writing readme.md about new :sparkles: toolchain
 - rewrite ALL this script
