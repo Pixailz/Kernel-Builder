@@ -466,7 +466,7 @@ function get_toolchain() {
 			rm -rf ${TMP_DIR}/${file}
 		fi
 		info "Downloading ${file}"
-		wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r407598.tar.gz --no-verbose --show-progress -O ${TMP_DIR}/${file}
+		wget ${url} --no-verbose --show-progress -O ${TMP_DIR}/${file}
 		if [ $? -eq 0 ]; then
 			success "Download successful"
 			local archive="${CLANG_SRC##*/}"
