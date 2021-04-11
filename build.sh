@@ -474,7 +474,6 @@ function get_toolchain() {
 				mkdir -p ${CLANG_ROOT}
 			fi
 			tar -xzvf ${TMP_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
-			exit
 		else
 			error "Download failed"
 			return 1
