@@ -33,3 +33,4 @@ Edited config file saved in `kernel_builder/saved/`
 ## TODO
 - handle error
 - fix [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) not working ... :'(
+- rewrite ALL this script
