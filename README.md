@@ -22,7 +22,7 @@ Usage : build.sh -c <config_file_name> [-e]
 Edited config file saved in `kernel_builder/saved/`
 ## TESTED KERNEL
 [kimocoder](https://github.com/kimocoder) :
-- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) 
+- [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6)
 
 [johanlike](https://github.com/johanlike) :
 - [DJY-Nethunter-Andrax-Kernel-Source](https://github.com/johanlike/DJY-Nethunter-Andrax-Kernel-Source)
