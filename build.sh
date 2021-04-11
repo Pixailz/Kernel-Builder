@@ -444,6 +444,9 @@ function get_toolchain() {
 				warning "Skipping ${archive}"
 			fi
 			info "Done"
+		else
+			error "Download failed"
+			return 1
 		fi
 	elif [ ${type} == "git" ]; then
 		git clone ${url} "${TMP_DIR}/${TOOLCHAIN_NAME}"
@@ -453,6 +456,28 @@ function get_toolchain() {
 			fi
 			mv ${TMP_DIR}/${TOOLCHAIN_NAME}/* ${CLANG_ROOT}
 			info "Done"
+		else
+			error "Download failed"
+			return 1
+		fi
+	elif [ ${type} == "google" ]; then
+		local file="${url##*/}"
+		if [ -f "${TMP_DIR}/${file}" ]; then
+			rm -rf ${TMP_DIR}/${file}
+		fi
+		info "Downloading ${file}"
+		wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r407598.tar.gz --no-verbose --show-progress -O ${TMP_DIR}/${file}
+		if [ $? -eq 0 ]; then
+			success "Download successful"
+			local archive="${CLANG_SRC##*/}"
+			if [ ! -d ${CLANG_ROOT} ]; then
+				mkdir -p ${CLANG_ROOT}
+			fi
+			tar -xJf ${TMP_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
+			exit
+		else
+			error "Download failed"
+			return 1
 		fi
 	else
 		error "Download type ${type} not availabe"
@@ -462,9 +487,8 @@ function get_toolchain() {
 function get_toolchains_custom() {
 	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
 	mkdir -p ${ARCH_DIR}
-	## clang
+	## CUSTOM
 	if [ ! -z "${CLANG_SRC}" ]; then
-		info "Downloading ${TOOLCHAIN_NAME} toolchain"
 		if [ -z "${CLANG_SRC_TYPE}" ]; then
 			CLANG_SRC_TYPE="wget"
 		fi
