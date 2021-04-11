@@ -553,6 +553,7 @@ function setup_toolchain() {
 		get_toolchains_default
 	fi
 	if [[ "${CUSTOM_TOOLCHAIN}" ]]; then
+		info "Loading ${TOOLCHAIN_NAME} toolchain"
 		source "${TOOLCHAIN_CONFIG}/${TOOLCHAIN_NAME}"
 	fi
 	if [[ ! -d "$CLANG_ROOT" ]]; then
