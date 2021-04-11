@@ -18,7 +18,7 @@ export ARCH=arm64
 export SUBARCH=arm64
 
 # Enable ccache to speed up compilation
-CCACHE=false
+CCACHE=true
 
 # Kernel local name
 export LOCALVERSION=-NetHunter
