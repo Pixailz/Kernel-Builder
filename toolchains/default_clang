@@ -1,0 +1,9 @@
+# Default Clang
+export TOOLCHAIN_ROOT=${TD}/clang-10.0
+export TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+TOOLCHAIN_SRC="https://images.kali.org/nethunter/toolchains/google_clang-10.0.4.tar.xz"
+#TOOLCHAIN_SRC="https://download.tuxfamily.org/librecal2015/librecal-months-script.tar.xz"
+#TOOLCHAIN_SRC=https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r407598.tar.gz
+TOOLCHAIN_SRC_TYPE="wget"
