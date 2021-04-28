@@ -36,3 +36,4 @@ Edited config file saved in `kernel_builder/saved/`
 - fix when folder is created but empty (for toolchain)
 - writing readme.md about new :sparkles: toolchain
 - rewrite ALL this script
+- add switch for gcc64/gcc32
