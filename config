@@ -1,11 +1,82 @@
-CC=clang##!/bin/bash
+#!/bin/bash
 ##############################################
 # Toolchains
 ##############################################
 # Toolchain root directory
 TD=~/android/toolchains
 
-TOOLCHAIN_CONFIG=$(cd ./toolchains && pwd)
+# Custom toolchain config folder
+TOOLCHAIN_CONFIG=${BUILD_DIR}/toolchains
+
+# Preferred editor
+EDIT=vi
+
+# Architecture
+export ARCH=arm64
+export SUBARCH=arm64
+export CC=clang
+
+# Enable ccache to speed up compilation
+CCACHE=true
+
+# Kernel local name
+export LOCALVERSION=-NetHunter
+
+##############################################
+# Environment
+##############################################
+
+# Kernel source directory (parent folder of $BUILD_DIR)
+KDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
+
+# build config
+CONFIG=nethunter_defconfig
+
+# Directory structure on the target device that will contain the modules directory
+MODULE_DIRTREE="modules/system_root/"
+
+# CPU threads
+# All Available cores (Used for normal compilation)
+THREADS="$(grep -c ^processor /proc/cpuinfo)"
+
+# Image Type (Only ONE of the following (lz4/gz) can be enabled!)
+# GZ Image (Uncomment to Enable)
+IMAGE_NAME=Image.gz-dtb
+# lz4 image (Uncomment to Enable)
+### IMAGE_NAME=Image.lz4-dtb
+
+# Set to "true" to enable dtbo
+DO_DTBO=false
+
+# Path to compiled dtbo image
+DTBO_IMAGE=$BUILD_DIR/out/arch/arm64/boot/dtbo.img
+
+# Set to "true" to enable dtb
+DO_DTB=false
+
+# DTB Version
+DTB_VER=2
+
+# DTBTool
+DTBTOOL=$BUILD_DIR/tools/dtbToolCM
+
+# Name of the dtb output image (must be dtb.img when used with nethunter boot-patcher)
+DTB_IMG=dtb.img
+
+# Input DTB path
+DTB_IN=$BUILD_DIR/out/arch/arm64/boot/dts
+
+# Space separated list of dtb file to generate in brackets
+DTB_FILES=
+
+# Path to compiled kernel image
+KERNEL_IMAGE=$BUILD_DIR/out/arch/arm64/boot/$IMAGE_NAME
+
+# Anykernel zip directory
+ANYKERNEL_DIR=$BUILD_DIR/anykernel3
+
+# Destination patch for Changelog
+CHANGELOG=$ANYKERNEL_DIR/Changelog.txt
 
 # Location to build the kernel
 KERNEL_OUT="$BUILD_DIR/out"
@@ -13,7 +84,42 @@ KERNEL_OUT="$BUILD_DIR/out"
 # Destination Path for compiled modules
 MODULES_OUT=$BUILD_DIR/modules_out
 
+# Source Path for module tree to be copied to into nethunter zip
+MODULES_IN=$BUILD_DIR/modules_out/lib
+
+# Destination Path for uploading kernel zip
+UPLOAD_DIR=$BUILD_DIR/output/
+
 # Package dependencies
 DEBIAN_DEPEND="axel bc build-essential ccache curl device-tree-compiler pandoc libncurses5-dev lynx lz4 fakeroot xz-utils whiptail"
 SUSE_DEPEND="axel bc ccache curl dtc pandoc libncurses6 lynx lz4 make ncurses-devel newt patch python-base fakeroot xz zip"
 
+# Preferred target for make [menu|n]config - "menuconfig" is default but "nconfig" can be used if keymappings are off
+CONFIG_TOOL=menuconfig
+
+# Additional compiler arguments
+MAKE_ARGS=""
+
+##############################################
+# CUSTOM
+##############################################
+
+CONFIG_FOLDER="${BUILD_DIR}/saved"
+if [[ ! -d "${CONFIG_FOLDER}" ]]; then
+        mkdir ${CONFIG_FOLDER}
+fi
+
+cd .. && git fetch
+
+LATEST_BRANCH=$(cd "$( dirname "${BASH_SOURCE[0]}" )/.." && git --no-pager branch -r --sort='committerdate' --format='%(objectname) %(refname:lstrip=-1)' | tail -1)
+LATEST_BRANCH_ID=$(echo "${LATEST_BRANCH}" | cut -d" " -f1)
+LATEST_BRANCH_NAME=$(echo "${LATEST_BRANCH}" | cut -d" " -f2)
+
+CURRENT_BRANCH=$(cd "$( dirname "${BASH_SOURCE[0]}" )/.." && git --no-pager branch --sort='committerdate' --format='%(objectname) %(refname:lstrip=-1)' | tail -1)
+CURRENT_BRANCH_ID=$(echo "${LATEST_BRANCH}" | cut -d" " -f1)
+CURRENT_BRANCH_SHORT7=$(echo "${CURRENT_BRANCH_ID}" | cut -c-7)
+CURRENT_BRANCH_NAME=$(echo "${LATEST_BRANCH}" | cut -d" " -f2)
+CURRENT_BRANCH_AUTHOR=$(git show -s --format="%aN" | sed 's/ /_/g')
+
+# Anykernel zip name
+ANY_ARCHIVE="any-${CURRENT_BRANCH_AUTHOR}-${CURRENT_BRANCH_SHORT7}.zip"

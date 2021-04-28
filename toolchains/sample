@@ -1,0 +1,44 @@
+########################################################
+
+line marked with * could be change
+(custom toolchain for gcc32/64 not handle at this time)
+
+########################################################
+
+# SAMPLE Clang
+*TOOLCHAIN_ROOT=${TD}/<NAME>
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+*TOOLCHAIN_SRC="<LINK>"
+*TOOLCHAIN_SRC_TYPE="<TYPE(wget | git)>"
+
+# Compile Sections
+export TOOLCHAIN_PATH=${TOOLCHAIN_ROOT}/bin
+export PATH=${CLANG_PATH}:${PATH}
+
+########################################################
+
+# SAMPLE gcc32
+*TOOLCHAIN_ROOT=${TD}/<NAME>
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+*TOOLCHAIN_SRC="<LINK>"
+*TOOLCHAIN_SRC_TYPE="<TYPE(wget | git)>"
+
+# Compile Sections
+export CROSS_COMPILE_ARM32=${TOOLCHAIN_ROOT}/bin/arm-linux-androideabi-
+
+########################################################
+
+# SAMPLE gcc64
+TOOLCHAIN_ROOT=${TD}/<NAME>
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+*TOOLCHAIN_SRC="<LINK>"
+*TOOLCHAIN_SRC_TYPE="<TYPE(wget | git)>"
+
+# Compile Sections
+export CROSS_COMPILE=${TOOLCHAIN_ROOT}/bin/aarch64-linux-android-
