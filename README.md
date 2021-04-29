@@ -38,6 +38,4 @@ sample [here](https://github.com/Pixailz/kernel_builder/blob/development/toolcha
 - handle error
 - fix [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) not working ... :'(
 - fix when folder is created but empty (for toolchain)
-- rewrite ALL this script
 - add switch for gcc64/gcc32
-- il faut add ARG PARSER maggle. :warning: faut le faire vite ça urge

@@ -46,6 +46,7 @@ function check() {
 
     else
         printf "${red}[  CHECK   ]${reset} $1${reset}\n"
+
     fi
 }
 
@@ -65,9 +66,10 @@ function check_os() {
 ##SETUP_ENV
 #=#=#=#=#=#
 function setup_env() {
-    ##BUILD DIR
-    BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-    source ${BUILD_DIR}/config
+	if [ ${UPDATE} ]; then
+		git_update
+
+	fi
 
     check_os
 
@@ -75,6 +77,26 @@ function setup_env() {
     #get_dependencies
 
     get_toolchains
+}
+
+##Update git as needed
+function git_update() {
+	if [ ${CURRENT_BRANCH_ID} == ${LATEST_BRANCH_ID} ]; then
+		warning "Already up-to-date"
+
+	else
+		info "Not up-to-date"
+		if [ ${CURRENT_BRANCH_NAME} != ${LATEST_BRANCH_NAME} ]; then
+			info "The Latest commit is comming from an another branches"
+			info "switching to it"
+			git reset --hard "${LATEST_BRANCH_NAME}"
+
+		else
+			info "Pulling repo"
+			git reset --hard HEAD && git pull
+
+		fi
+	fi
 }
 
 ##DOWNLOAD FILE FROM SETTING FILE NAME
@@ -113,7 +135,27 @@ function get_toolchain() {
                     error "Download failed"
 
                 fi
-            fi
+
+            elif [ ${TOOLCHAIN_SRC_TYPE} == "git" ]; then
+				if [ -d ${ARCH_DIR}/${TOOLCHAIN_NAME} ]; then
+					rm -rf ${ARCH_DIR}/${TOOLCHAIN_NAME}
+				fi
+
+				git clone ${TOOLCHAIN_SRC} "${ARCH_DIR}/${TOOLCHAIN_NAME}"
+				if [ $? -eq 0 ]; then
+					if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+						mkdir -p ${TOOLCHAIN_ROOT}
+
+					fi
+
+					mv ${ARCH_DIR}/${TOOLCHAIN_NAME}/* ${TOOLCHAIN_ROOT}
+
+				else
+					error "Download failed"
+					return 1
+
+				fi
+			fi
         fi
     else
         error "${TOOLCHAIN_NAME} have error in his config"
@@ -162,7 +204,6 @@ function compile_kernel() {
 	make_oclean
 	make_sclean
 	setup_dirs
-
 	edit_config && make_kernel
 }
 
@@ -204,11 +245,6 @@ function setup_dirs() {
 	success "Created new modules_out directory"
 }
 
-#*# TO SYNC WITH ARG PARSER
-function get_defconfig() {
-	return 0
-}
-
 ##Edit .config in working directory
 function edit_config() {
 	local cc
@@ -220,15 +256,14 @@ function edit_config() {
 
 	fi
 
-    get_defconfig || return 1
-
 	if [ -z ${EDITION} ]; then
 		info "Create config"
-		make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG
+		make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME
 
 	else
 		info "Creating custom config"
-	    make -C $KDIR O="$KERNEL_OUT" $cc $CONFIG $CONFIG_TOOL
+	    make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME $CONFIG_TOOL
+		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
 
 	fi
 }
@@ -260,7 +295,7 @@ function enable_ccache() {
 	return 0
 }
 
-## copy version file across
+##copy version file across
 function copy_version() {
 	if [ ! -z ${SRC_VERSION} ] && [ ! -z ${TARGET_VERSION} ] && [ -f ${SRC_VERSION} ]; then
 		cp -f ${SRC_VERSION} ${TARGET_VERSION}
@@ -268,7 +303,52 @@ function copy_version() {
 	return 0
 }
 
-# Compile the kernel
+##SHOW INFO BEFORE COMPILING
+function info_before_compile() {
+	printf "\n"
+
+	warning "Info Before Compiling"
+
+	info "Config :\t\t\t${CUSTOM_CONFIG_NAME}"
+
+	if [ ! -z ${CUSTOM_TOOLCHAIN} ]; then
+		info "Toolchain :\t\t${CUSTOM_TOOLCHAIN_NAME}"
+
+	else
+		info "Toolchain :\t\tdefault"
+
+	fi
+
+	if [ ! -z ${OUTPUT} ]; then
+		info "Anykernel zip output :\t${OUTPUT_ZIP_FOLDER}"
+
+	else
+		info "Anykernel zip output :\t${HOME}"
+
+	fi
+
+	if [ -z ${EDITION} ]; then
+		info "Edited :\t\t\tfalse"
+
+	else
+		info "Edited :\t\t\ttrue"
+
+	fi
+
+	if [ -z ${UPDATE} ]; then
+		info "Updated :\t\t\tfalse"
+
+	else
+		info "Updated :\t\t\ttrue"
+
+	fi
+
+	printf "\n"
+
+	pause
+}
+
+##Compile the kernel
 function make_kernel() {
 	local cc
 	local confdir=${KDIR}/arch/$ARCH/configs
@@ -292,6 +372,9 @@ function make_kernel() {
 
 	## Some kernel sources do not compile into a separate $OUT directory so we set $OUT = $ KDIR
 	## This works with clean and config targets but not for a build, we'll catch this here
+
+	info_before_compile
+
 	if [ "$KDIR" == "$KERNEL_OUT" ]; then
 		if [ "$CC" == "ccache clang" ]; then
 			time make -C $KDIR CC="ccache clang"  -j "$THREADS" ${MAKE_ARGS}
@@ -381,6 +464,7 @@ function make_clog() {
 	cd $ANYKERNEL_DIR
 }
 
+##ZIPING ANYKERNEL FOLDER
 function make_anykernel_zip() {
 	mkdir -p ${UPLOAD_DIR}
 
@@ -414,9 +498,14 @@ function make_anykernel_zip() {
 	info "Creating anykernel zip file"
 	cd "$ANYKERNEL_DIR"
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
+
+	if [ ${EDITION} ]; then
+		ANY_ARCHIVE=$(echo $ANY_ARCHIVE | sed 's/.zip/-edited.zip/')
+	fi
+
 	zip -r "$ANY_ARCHIVE" *
 
-	if [ -z ${OUTPUTED} ]; then
+	if [ -z ${OUTPUT} ]; then
 		info "Copying ${ANY_ARCHIVE} to ${HOME}"
 		cp ${ANY_ARCHIVE} ${HOME}
 
@@ -442,14 +531,109 @@ function make_aclean() {
 ##MAIN
 #=#=#=#
 function main() {
-	printf "\n"
-
     setup_env
 
-	#compile_kernel
+	compile_kernel
 
     create_anykernel_zip
 }
+
+function list_toolchains() {
+	info "Available toolchains config"
+	for toolchain in $(ls $TOOLCHAIN_CONFIG); do
+		printf "\t$toolchain\n"
+
+	done
+}
+
+function usage() {
+	printf "Usage : ${0} -c <config_file_name> [[-e] [-o <path_to_output_folder>] [-u]]\n"
+	printf "\t-h : show this help\n"
+	printf "\t-c : config file name to compile/edit\n"
+	printf "\t-e : edit the config before compiling\n"
+	printf "\t-o : output of the anykernel zip (only accept absolute path)\n"
+	printf "\t-u : update repo\n"
+	printf "\t-t : specify toolchain\n"
+	exit
+}
+
+##BUILD DIR
+BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source ${BUILD_DIR}/config
+
+while [ "$1" != "" ]; do
+	case $1 in
+		-c)
+			CUSTOM_CONFIG=true
+			shift
+			if [ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]; then
+				warning "config file ${1} not found"
+				usage
+
+			else
+				CUSTOM_CONFIG_NAME="${1}"
+
+			fi
+			;;
+
+		-t)
+			CUSTOM_TOOLCHAIN=true
+			shift
+			if [ ! -z $1 ]; then
+				if [ -f ${TOOLCHAIN_CONFIG}/${1} ]; then
+					CUSTOM_TOOLCHAIN_NAME="${1}"
+
+				else
+					warning "toolchain config \"${1}\" not found\n"
+					list_toolchains
+					exit
+
+				fi
+			else
+				list_toolchains
+				printf "\n"
+				usage
+
+			fi
+			;;
+
+		-o)
+			OUTPUT=true
+			shift
+			if [[ -z "$1" ]]; then
+				warning "$1 folder dosen't exist."
+				usage
+
+			else
+				OUTPUT_ZIP_FOLDER="$1"
+
+			fi
+			;;
+
+		-e)
+			EDITION=true
+			;;
+
+		-u)
+			UPDATE=true
+			;;
+
+		-h)
+			usage
+			;;
+
+		*)
+			warnings "Wrong args"
+			usage
+			;;
+
+	esac
+	shift
+done
+
+if [ -z ${CUSTOM_CONFIG} ]; then
+	usage
+fi
 
 main
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#

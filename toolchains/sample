@@ -15,7 +15,7 @@ TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
 
 # Compile Sections
 export TOOLCHAIN_PATH=${TOOLCHAIN_ROOT}/bin
-export PATH=${CLANG_PATH}:${PATH}
+export PATH=${TOOLCHAIN_PATH}:${PATH}
 
 ########################################################
 
