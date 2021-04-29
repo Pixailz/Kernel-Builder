@@ -1,0 +1,13 @@
+# Default Clang
+TOOLCHAIN_ROOT=${TD}/clang-10.0
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+TOOLCHAIN_SRC="https://images.kali.org/nethunter/toolchains/google_clang-10.0.4.tar.xz"
+TOOLCHAIN_SRC_TYPE="wget"
+
+# Compile Sections
+export TOOLCHAIN_PATH=${TOOLCHAIN_ROOT}/bin
+export PATH=${TOOLCHAIN_PATH}:${PATH}
+export LD_LIBRARY_PATH=${TOOLCHAIN_ROOT}/lib64:$LD_LIBRARY_PATH
+export CLANG_TRIPLE=aarch64-linux-gnu-

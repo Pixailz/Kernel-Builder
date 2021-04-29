@@ -1,0 +1,11 @@
+# GCC 64bit
+## arm64 cross compiler directory:
+TOOLCHAIN_ROOT="${TD}/aarch64-4.9"
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+TOOLCHAIN_SRC="https://images.kali.org/nethunter/toolchains/google_aarch64-4.9.tar.xz"
+TOOLCHAIN_TYPE="wget"
+
+# Compile Sections
+export CROSS_COMPILE=${TOOLCHAIN_ROOT}/bin/aarch64-linux-android-

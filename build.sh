@@ -13,78 +13,201 @@ blink_red='\033[05;31m'
 restore='\033[0m'
 reset='\e[0m'
 
-# NetHunter Stage 1 Kernel Build Script
-#
-# This script if heavily based on work by holyangle
-# https://gitlab.com/HolyAngel/op7
-##############################################
-
-##############################################
-# Utils Func
-## Pause
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+##UTILS FUNCTIONS
+#=#=#=#=#=#=#=#=#
+## PAUSE
 function pause() {
 	local message="$@"
 	[ -z $message ] && message="Press [Enter] to continue.."
 	read -p "$message" readEnterkey
 }
 
-## ASK
-function ask() {
-	# https://gist.github.com/davejamesmiller/1965569
-	while true; do
-
-		if [ "${2:-}" = "Y" ]; then
-			prompt="Y/n"
-			default=Y
-		elif [ "${2:-}" = "N" ]; then
-			prompt="y/N"
-				default=N
-		else
-				prompt="y/n"
-				default=
-		fi
-
-		# Ask the question
-		question
-		read -p "$1 [$prompt] " REPLY
-
-		# Default?
-		if [ -z "$REPLY" ]; then
-			REPLY=$default
-		fi
-
-		# Check if the reply is valid
-		case "$REPLY" in
-			Y*|y*) return 0 ;;
-			N*|n*) return 1 ;;
-		esac
-	done
-}
-
-
 function info() {
-		printf "${lcyan}[   INFO   ]${reset} $*${reset}\n"
+	printf "${lcyan}[   INFO   ]${reset} $*${reset}\n"
 }
 
 function success() {
-		printf "${lgreen}[ SUCCESS  ]${reset} $*${reset}\n"
+	printf "${lgreen}[ SUCCESS  ]${reset} $*${reset}\n"
 }
 
 function warning() {
-		printf "${lyellow}[ WARNING  ]${reset} $*${reset}\n"
+	printf "${lyellow}[ WARNING  ]${reset} $*${reset}\n"
 }
 
 function error() {
-		printf "${red}[  ERROR   ]${reset} $*${reset}\n"
+	printf "${red}[  ERROR   ]${reset} $*${reset}\n"
+	exit
+}
+
+function check() {
+    if [ $2 == true ]; then
+        printf "${lgreen}[  CHECK   ]${reset} $1${reset}\n"
+
+    else
+        printf "${red}[  CHECK   ]${reset} $1${reset}\n"
+
+    fi
 }
 
 function question() {
-		printf "${yellow}[ QUESTION ]${reset} "
+    printf "${yellow}[ QUESTION ]${reset} "
 }
 
-##############################################
-# Compile Kernel
-## Clean "out" folders
+# DETECT OS
+function check_os() {
+	if [ -f /etc/SUSE-brand ]; then
+		suse=true
+	fi
+}
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+##SETUP_ENV
+#=#=#=#=#=#
+function setup_env() {
+	if [ ${UPDATE} ]; then
+		git_update
+
+	fi
+
+    check_os
+
+    #TODO# ADD CHECK IF DEPENDENCIES ALREADY INSTALLED
+    #get_dependencies
+
+    get_toolchains
+}
+
+##Update git as needed
+function git_update() {
+	if [ ${CURRENT_BRANCH_ID} == ${LATEST_BRANCH_ID} ]; then
+		warning "Already up-to-date"
+
+	else
+		info "Not up-to-date"
+		if [ ${CURRENT_BRANCH_NAME} != ${LATEST_BRANCH_NAME} ]; then
+			info "The Latest commit is comming from an another branches"
+			info "switching to it"
+			git reset --hard "${LATEST_BRANCH_NAME}"
+
+		else
+			info "Pulling repo"
+			git reset --hard HEAD && git pull
+
+		fi
+	fi
+}
+
+##DOWNLOAD FILE FROM SETTING FILE NAME
+function get_toolchain() {
+    source ${BUILD_DIR}/toolchains/${1}
+
+    local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
+    mkdir -p ${ARCH_DIR}
+
+    if [ ! -z ${TOOLCHAIN_SRC} ]; then
+        if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+            check "Setting up ${TOOLCHAIN_NAME}" false
+
+            local file_name="${TOOLCHAIN_SRC##*/}"
+
+            if [ -f "${ARCH_DIR}/${file_name}" ]; then
+                warning "Removing file from previous run"
+                rm -f ${ARCH_DIR}/${file_name}
+            fi
+
+            if [ ${TOOLCHAIN_SRC_TYPE} == "wget" ]; then
+                info "Downloading ${TOOLCHAIN_NAME}"
+
+                wget ${TOOLCHAIN_SRC} --quiet --show-progress -O ${ARCH_DIR}/${file_name}
+
+                if [ $? -eq 0 ]; then
+                    success "Successfully downloaded ${file_name}"
+
+                    if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+                        mkdir -p ${TOOLCHAIN_ROOT}
+                    fi
+
+                    extract "${ARCH_DIR}/${file_name}" "$TOOLCHAIN_ROOT"
+
+                else
+                    error "Download failed"
+
+                fi
+
+            elif [ ${TOOLCHAIN_SRC_TYPE} == "git" ]; then
+				if [ -d ${ARCH_DIR}/${TOOLCHAIN_NAME} ]; then
+					rm -rf ${ARCH_DIR}/${TOOLCHAIN_NAME}
+				fi
+
+				git clone ${TOOLCHAIN_SRC} "${ARCH_DIR}/${TOOLCHAIN_NAME}"
+				if [ $? -eq 0 ]; then
+					if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+						mkdir -p ${TOOLCHAIN_ROOT}
+
+					fi
+
+					mv ${ARCH_DIR}/${TOOLCHAIN_NAME}/* ${TOOLCHAIN_ROOT}
+
+				else
+					error "Download failed"
+					return 1
+
+				fi
+			fi
+        fi
+    else
+        error "${TOOLCHAIN_NAME} have error in his config"
+    fi
+}
+
+##EXTRACT DOWNLOADED FILE IN GET_TOOLCHAIN
+function extract() {
+    file_path=${1}
+    file_name=${file_path##*/}
+    file_extension=${file_name: -6}
+    out_dir=${2}
+
+    if [ ${file_extension} == tar.xz ]; then
+        info "Extracting ${file_name} in ${out_dir}"
+        tar -xJf ${file_path} -C ${out_dir} --strip-components=1
+        success "${file_name} Successfully extracted\n"
+
+    elif [ ${file_extension} == tar.gz ]; then
+        info "Extracting ${file_name} in ${out_dir}"
+        tar -xzf ${file_path} -C ${out_dir} --strip-components=1
+        success "${file_name} Successfully extracted\n"
+
+    fi
+}
+
+##DOWNLOAD DEFAULT TOOLCHAIN
+function get_toolchains() {
+	if [ -z ${CUSTOM_TOOLCHAIN} ]; then
+    	get_toolchain "default_clang"
+
+	else
+		get_toolchain "${CUSTOM_TOOLCHAIN_NAME}"
+
+	fi
+
+	get_toolchain "default_gcc64"
+	get_toolchain "default_gcc32"
+}
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+##COMPILE_KERNEL
+#=#=#=#=#=#=#=#=#
+function compile_kernel() {
+	make_oclean
+	make_sclean
+	setup_dirs
+	edit_config && make_kernel
+}
+
+##Clean "out" folders
 function make_oclean() {
 	info "Cleaning up kernel-out & modules-out directories"
 	## Let's make sure we dont't delete the kernel source if we compile in the source tree
@@ -99,20 +222,20 @@ function make_oclean() {
 	success "Out directories removed!"
 }
 
-## Clean source tree
+##Clean source tree
 function make_sclean() {
 	local confdir=${KDIR}/arch/$ARCH/configs
 	info "Cleaning source directory"
 	if [ -f ${confdir}/$BUILD_CONFIG.old ]; then
-			rm -f ${confdir}/$BUILD_CONFIG.old
+		rm -f ${confdir}/$BUILD_CONFIG.old
 	fi
 	if [ -f ${confdir}/$BUILD_CONFIG.new ]; then
-			rm -f ${confdir}/$BUILD_CONFIG.new
+		rm -f ${confdir}/$BUILD_CONFIG.new
 	fi
 	success "Source directory cleaned"
 }
 
-## Create kernel compilation working directories
+##Create kernel compilation working directories
 function setup_dirs() {
 	info "Creating new out directory"
 	mkdir -p "$KERNEL_OUT"
@@ -122,79 +245,47 @@ function setup_dirs() {
 	success "Created new modules_out directory"
 }
 
-## Select defconfig file
-function select_defconfig() {
-	local IFS opt options f i
-	local confdir=${KDIR}/arch/$ARCH/configs
-	info "Please select the configuration you would like to use as basis"
-	cd $confdir
-	while IFS= read -r -d $'\0' f; do
-		options[i++]="$f"
-	done < <(find * -type f -print0 )
-
-	select opt in "${options[@]}" "Cancel"; do
-		case $opt in
-		"Cancel")
-			cd -
-			return 1
-			;;
-		*)
-			cd -
-			break
-			;;
-		esac
-	done
-	info "Using ${opt} as new ${BUILD_CONFIG}"
-	cp ${confdir}/${opt} ${confdir}/${BUILD_CONFIG}
-	return 0
-}
-
-## Check if $BUILD_CONFIG exists and create it if not
-function get_defconfig() {
-	local defconfig
-	local confdir=${KDIR}/arch/$ARCH/configs
-	if [ ! -f ${confdir}/${BUILD_CONFIG} ]; then
-		warning "${BUILD_CONFIG} not found, creating."
-		select_defconfig
-		return $?
-	fi
-	return 0
-}
-
-## Edit .config in working directory
+##Edit .config in working directory
 function edit_config() {
 	local cc
-	# CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	printf "\n"
+
+    ##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
-	fi
-	get_defconfig || return 1
-	if [[ "$EDITION" ]]; then
-		info "Creating custom config"
-		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG $CONFIG_TOOL
-		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
-	else
-		info "Create config"
-		make -C $KDIR O="$KERNEL_OUT" $cc $BUILD_CONFIG
+
 	fi
 
-	cfg_done=true
+	if [ -z ${EDITION} ]; then
+		info "Create config"
+		make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME
+
+	else
+		info "Creating custom config"
+	    make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME $CONFIG_TOOL
+		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
+
+	fi
 }
 
-## Enable ccache to speed up compilation
+##Enable ccache to speed up compilation
 function enable_ccache() {
 	if [ "$CCACHE" = true ]; then
 		if [ "$CC" == "clang" ]; then
 			CC="ccache clang"
-			else
+
+		else
 			if [ ! -z "${CC}" ] && [[ ${CC} != ccache* ]]; then
 				CC="ccache $CC"
+
 			fi
 			if [ ! -z "${CROSS_COMPILE}" ] && [[ ${CROSS_COMPILE} != ccache* ]]; then
 				export CROSS_COMPILE="ccache ${CROSS_COMPILE}"
+
 			fi
 			if [ ! -z "${CROSS_COMPILE_ARM32}" ] && [[ ${CROSS_COMPILE_ARM32} != ccache* ]]; then
 				export CROSS_COMPILE_ARM32="ccache ${CROSS_COMPILE_ARM32}"
+
 			fi
 		fi
 		info "~~~~~~~~~~~~~~~~~~"
@@ -204,7 +295,7 @@ function enable_ccache() {
 	return 0
 }
 
-## copy version file across
+##copy version file across
 function copy_version() {
 	if [ ! -z ${SRC_VERSION} ] && [ ! -z ${TARGET_VERSION} ] && [ -f ${SRC_VERSION} ]; then
 		cp -f ${SRC_VERSION} ${TARGET_VERSION}
@@ -212,70 +303,146 @@ function copy_version() {
 	return 0
 }
 
-## Compile the kernel
+##SHOW INFO BEFORE COMPILING
+function info_before_compile() {
+	printf "\n"
+
+	warning "Info Before Compiling"
+
+	info "Config :\t\t\t${CUSTOM_CONFIG_NAME}"
+
+	if [ ! -z ${CUSTOM_TOOLCHAIN} ]; then
+		info "Toolchain :\t\t${CUSTOM_TOOLCHAIN_NAME}"
+
+	else
+		info "Toolchain :\t\tdefault"
+
+	fi
+
+	if [ ! -z ${OUTPUT} ]; then
+		info "Anykernel zip output :\t${OUTPUT_ZIP_FOLDER}"
+
+	else
+		info "Anykernel zip output :\t${HOME}"
+
+	fi
+
+	if [ -z ${EDITION} ]; then
+		info "Edited :\t\t\tfalse"
+
+	else
+		info "Edited :\t\t\ttrue"
+
+	fi
+
+	if [ -z ${UPDATE} ]; then
+		info "Updated :\t\t\tfalse"
+
+	else
+		info "Updated :\t\t\ttrue"
+
+	fi
+
+	printf "\n"
+
+	pause
+}
+
+##Compile the kernel
 function make_kernel() {
 	local cc
 	local confdir=${KDIR}/arch/$ARCH/configs
-	# CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	printf "\n"
+
+    ##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
+
 	fi
+
 	enable_ccache
+
 	info "~~~~~~~~~~~~~~~~~~"
 	info " Building kernel"
 	info "~~~~~~~~~~~~~~~~~~"
+
 	copy_version
+
 	grep "CONFIG_MODULES=y" ${KERNEL_OUT}/.config >/dev/null && MODULES=true
+
 	## Some kernel sources do not compile into a separate $OUT directory so we set $OUT = $ KDIR
 	## This works with clean and config targets but not for a build, we'll catch this here
+
+	info_before_compile
+
 	if [ "$KDIR" == "$KERNEL_OUT" ]; then
 		if [ "$CC" == "ccache clang" ]; then
 			time make -C $KDIR CC="ccache clang"  -j "$THREADS" ${MAKE_ARGS}
+
 			if [ "$MODULES" = true ]; then
-					time make -C $KDIR CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+		    	time make -C $KDIR CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+
 			fi
 		else
 			time make -C $KDIR $cc -j "$THREADS" ${MAKE_ARGS}
+
 			if [ "$MODULES" = true ]; then
-					time make -C $KDIR $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+		    	time make -C $KDIR $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+
 			fi
 		fi
 	else
 		if [ "$CC" == "ccache clang" ]; then
 			time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" ${MAKE_ARGS}
+
 			if [ "$MODULES" = true ]; then
-				time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
-			fi
+		    		time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+
+            fi
 		else
 			time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" ${MAKE_ARGS}
+
 			if [ "$MODULES" = true ]; then
-				time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+		    		time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+
 			fi
 		fi
 	fi
+
 	rm -f ${MODULES_OUT}/lib/modules/*/source
 	rm -f ${MODULES_OUT}/lib/modules/*/build
-	success "Kernel build completed"
+
+	success "Kernel build completed\n"
+}
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+##CREATE_ANYKERNEL
+#=#=#=#
+function create_anykernel_zip() {
+	make_aclean
+	make_anykernel_zip
+}
+##Function to generate a dtb image, expects output directory as argument
+function make_dtb() {
+	local dtb_dir=$1
+	if [ "$DTB_VER" == "2" ]; then
+		DTB_VER="-2"
+	elif [ ! "DTB_VER" == "-2" ]; then
+		unset DTB_VER
+	fi
+	printf "\n"
+	info " Building dtb"
+	make -C $KDIR $cc -j "$THREADS" $DTB_FILES    # Don't use brackets around $DTB_FILES
+	info "Generating DTB Image"
+	$DTBTOOL $DTB_VER -o $dtb_dir/$DTB_IMG -s 2048 -p $KERNEL_OUT/scripts/dtc/ $DTB_IN/
+	rm -rf $DTB_IN/.*.tmp
+	rm -rf $DTB_IN/.*.cmd
+	rm -rf $DTB_IN/*.dtb
+	success "DTB generated"
 }
 
-function compile_kernel() {
-	make_oclean
-	make_sclean
-	setup_dirs
-	edit_config && make_kernel
-}
-##############################################
-
-##############################################
-# Create Anykernel Zip
-## Clean anykernel directory
-function make_aclean() {
-	info "Cleaning up anykernel zip directory"
-	rm -rf $ANYKERNEL_DIR/Image* $ANYKERNEL_DIR/dtb $CHANGELOG ${ANYKERNEL_DIR}/modules ${ANYKERNEL_DIR}/*.zip
-	success "Anykernel directory cleaned"
-}
-
-## Generate Changelog
+##Generate Changelog
 function make_clog() {
 	info "Generating Changelog"
 	rm -rf $CHANGELOG
@@ -297,309 +464,85 @@ function make_clog() {
 	cd $ANYKERNEL_DIR
 }
 
-## Generate the anykernel zip
+##ZIPING ANYKERNEL FOLDER
 function make_anykernel_zip() {
 	mkdir -p ${UPLOAD_DIR}
+
 	info "Copying kernel to anykernel zip directory"
 	if [[ ! -f "$KERNEL_IMAGE" ]]; then
-		warning "File missing. try relaunching scripts"
+		error "File missing. try relaunching scripts"
 	else
 		cp "$KERNEL_IMAGE" "$ANYKERNEL_DIR"
+
 	fi
 	if [ "$DO_DTBO" = true ]; then
 		info "Copying dtbo to zip directory"
 		cp "$DTBO_IMAGE" "$ANYKERNEL_DIR"
+
 	fi
 	if [ "$DO_DTB" = true ]; then
 		info "Generating dtb in zip directory"
 		make_dtb ${ANYKERNEL_DIR}
+
 	fi
 	if [ -d ${MODULES_OUT}/lib ]; then
 		info "Copying modules to zip directory"
 		mkdir -p ${ANYKERNEL_DIR}/${MODULE_DIRTREE}
 		cp -r ${MODULES_IN} ${ANYKERNEL_DIR}/${MODULE_DIRTREE}
+
 	fi
 	success "Done"
+
 	make_clog
+
 	info "Creating anykernel zip file"
 	cd "$ANYKERNEL_DIR"
 	sed -i "/Version/c\   Version=\"$CURRENT_BRANCH_SHORT7\"" banner
+
+	if [ ${EDITION} ]; then
+		ANY_ARCHIVE=$(echo $ANY_ARCHIVE | sed 's/.zip/-edited.zip/')
+	fi
+
 	zip -r "$ANY_ARCHIVE" *
-	if [[ "$OUTPUTED" ]]; then
-		info "Copying ${ANY_ARCHIVE} to ${OUTPUT_ZIP_FOLDER}"
-		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
-	else
+
+	if [ -z ${OUTPUT} ]; then
 		info "Copying ${ANY_ARCHIVE} to ${HOME}"
 		cp ${ANY_ARCHIVE} ${HOME}
+
+	else
+		#*# TO SYNC WITH ARG PARSER
+		info "Copying ${ANY_ARCHIVE} to ${OUTPUT_ZIP_FOLDER}"
+		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
+
 	fi
 	cd $BUILD_DIR
 }
 
-function create_anykernel_zip() {
-	make_aclean
-	make_anykernel_zip
+# Clean anykernel directory
+function make_aclean() {
+	info "Cleaning up anykernel zip directory"
+	rm -rf $ANYKERNEL_DIR/Image* $ANYKERNEL_DIR/dtb $CHANGELOG ${ANYKERNEL_DIR}/modules
+	success "Anykernel directory cleaned"
 }
-##############################################
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
-##############################################
-# Update git as needed
-function git_update() {
-	if [[ "${CURRENT_BRANCH_ID}" == "${LATEST_BRANCH_ID}" ]]; then
-		info "Already up-to-date"
-	else
-		info "Not up-to-date"
-		if [[ "${CURRENT_BRANCH_NAME}" != "${LATEST_BRANCH_NAME}" ]]; then
-			info "The Latest commit is comming from an another branches"
-			info "switching to it"
-			git reset --hard "${LATEST_BRANCH_NAME}"
-		else
-			info "Pulling repo"
-			git reset --hard HEAD && git pull
-		fi
-	fi
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+##MAIN
+#=#=#=#
+function main() {
+    setup_env
+
+	compile_kernel
+
+    create_anykernel_zip
 }
-##############################################
-
-##############################################
-# Check_Toolchains
-
-# Verfify file against 256sha; required argument <sha file> <directory>
-function verify_sha256 {
-	local sha=$1
-	local dir=$2
-	info "Verifying integrity of downloaded file"
-	cd ${dir}
-	sha256sum -c ${sha} || {
-		error "Rootfs corrupted. Please run this installer again or download the file manually"
-		cd -
-		return 1
-	}
-	cd -
-	return 0
-}
-
-# Download file via http(s); required arguments: <URL> <download directory>
-function get_sha {
-	local url=${1}
-	local sha_url=${url}.sha256
-	local dir=${2}
-	local file="${url##*/}"
-	local sha_file="${sha_url##*/}"
-	info "Getting SHA"
-	if [ -f ${dir}/${sha_file} ]; then
-		rm -f ${dir}/${sha_file}
-	fi
-	axel --alternate -o ${dir}/${sha_file} "$sha_url"
-	if [ $? -ne 0 ]; then
-		return 0
-	fi
-	verify_sha256 "${sha_file}" "${dir}"
-	if [ $? -ne 0 ]; then
-		return 0
-	fi
-}
-
-# Download file via http(s); required arguments: <URL> <download directory>
-function wget_file {
-	local url=${1}
-	local dir=${2}
-	local file="${url##*/}"
-	if [ -f ${dir}/${file} ]; then
-		rm -f ${dir}/${file}
-	fi
-	info "Downloading ${file}"
-	axel --alternate -o ${dir}/${file} "$url"
-	if [ $? -eq 0 ]; then
-		success "Download successful"
-	else
-		error "Download failed"
-		return 1
-	fi
-	get_sha "${url}" ${dir}
-	if [ $? -eq 0 ]; then
-		success "Download successful"
-		return 0
-	else
-		error "Download failed"
-		return 1
-	fi
-}
-
-# Download toolchain; required arguments: "source URL" "Download type(wget/git)"
-function get_toolchain() {
-	local url=$1
-	local type=$2
-	local TMP_DIR="${BUILD_DIR}/toolchain_archs"
-	if [ ${type} == "wget" ]; then
-		wget_file ${url} ${TMP_DIR}
-		if [ $? -eq 0 ]; then
-			if [ -d ${CLANG_ROOT} ]; then
-				rm -rf ${CLANG_ROOT}
-			fi
-			if [ ! -d ${CLANG_ROOT} ]; then
-				local archive="${CLANG_SRC##*/}"
-				mkdir -p ${CLANG_ROOT}
-				tar -xJf ${ARCH_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
-			else
-				warning "Skipping ${archive}"
-			fi
-			info "Done"
-		else
-			error "Download failed"
-			return 1
-		fi
-	elif [ ${type} == "git" ]; then
-		git clone ${url} "${TMP_DIR}/${TOOLCHAIN_NAME}"
-		if [ $? -eq 0 ]; then
-			if [ ! -d ${CLANG_ROOT} ]; then
-				mkdir -p ${CLANG_ROOT}
-			fi
-			mv ${TMP_DIR}/${TOOLCHAIN_NAME}/* ${CLANG_ROOT}
-			info "Done"
-		else
-			error "Download failed"
-			return 1
-		fi
-	elif [ ${type} == "google" ]; then
-		local file="${url##*/}"
-		if [ -f "${TMP_DIR}/${file}" ]; then
-			rm -rf ${TMP_DIR}/${file}
-		fi
-		info "Downloading ${file}"
-		wget ${url} --no-verbose --show-progress -O ${TMP_DIR}/${file}
-		if [ $? -eq 0 ]; then
-			success "Download successful"
-			local archive="${CLANG_SRC##*/}"
-			if [ ! -d ${CLANG_ROOT} ]; then
-				mkdir -p ${CLANG_ROOT}
-			fi
-			tar -xzf ${TMP_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
-		else
-			error "Download failed"
-			return 1
-		fi
-	else
-		error "Download type ${type} not availabe"
-	fi
-}
-
-function get_toolchains_custom() {
-	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
-	mkdir -p ${ARCH_DIR}
-	## CUSTOM
-	if [ ! -z "${CLANG_SRC}" ]; then
-		if [ -z "${CLANG_SRC_TYPE}" ]; then
-			CLANG_SRC_TYPE="wget"
-		fi
-		get_toolchain ${CLANG_SRC} ${CLANG_SRC_TYPE}
-	fi
-}
-# Download all toolchains
-function get_toolchains_default() {
-	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
-	mkdir -p ${ARCH_DIR}
-	## clang
-	if [ ! -z "${CLANG_SRC}" ]; then
-		info "Downloading clang toolchain"
-		if [ -z "${CLANG_SRC_TYPE}" ]; then
-			CLANG_SRC_TYPE="wget"
-		fi
-		get_toolchain ${CLANG_SRC} ${CLANG_SRC_TYPE}
-		if [ $? -eq 0 ]; then
-			if [ -d ${CLANG_ROOT} ]; then
-				rm -rf ${CLANG_ROOT}
-			fi
-			if [ ! -d ${CLANG_ROOT} ]; then
-				local archive="${CLANG_SRC##*/}"
-				mkdir -p ${CLANG_ROOT}
-				tar -xJf ${ARCH_DIR}/${archive} -C ${CLANG_ROOT} --strip-components=1
-			else
-				warning "Skipping ${archive}"
-			fi
-			info "Done"
-		fi
-	fi
-	## gcc32
-	if [ ! -z "${CROSS_COMPILE_ARM32_SRC}" ]; then
-		info "Downloading 32bit gcc toolchain"
-		if [ -z "${CROSS_COMPILE_ARM32_TYPE}" ]; then
-			CROSS_COMPILE_ARM32_TYPE="wget"
-		fi
-		get_toolchain ${CROSS_COMPILE_ARM32_SRC} ${CROSS_COMPILE_ARM32_TYPE}
-		if [ $? -eq 0 ]; then
-			if [ -d ${CCD32} ]; then
-				rm -rf ${CCD32}
-			fi
-			if [ ! -d ${CCD32} ]; then
-				local archive="${CROSS_COMPILE_ARM32_SRC##*/}"
-				mkdir -p ${CCD32}
-				tar -xJf ${ARCH_DIR}/${archive} -C ${CCD32} --strip-components=1
-			else
-				warning "Skipping ${archive}"
-			fi
-				info "Done"
-		fi
-	fi
-	## gcc64
-	if [ ! -z "${CROSS_COMPILE_SRC}" ]; then
-		info "Downloading 64bit gcc toolchain"
-		if [ -z "${CROSS_COMPILE_SRC_TYPE}" ]; then
-			CROSS_COMPILE_SRC_TYPE="wget"
-		fi
-		get_toolchain ${CROSS_COMPILE_SRC} ${CROSS_COMPILE_SRC_TYPE}
-		if [ $? -eq 0 ]; then
-			if [ -d ${CCD64} ]; then
-				rm -rf ${CCD64}
-			fi
-			if [ ! -d ${CCD64} ]; then
-				local archive="${CROSS_COMPILE_SRC##*/}"
-				mkdir -p ${CCD64}
-				tar -xJf ${ARCH_DIR}/${archive} -C ${CCD64} --strip-components=1
-			else
-				warning "Skipping ${archive}"
-			fi
-				info "Done"
-		fi
-	fi
-}
-
-function load_toolchain_default() {
-	source "${TOOLCHAIN_CONFIG}/gcc32"
-	source "${TOOLCHAIN_CONFIG}/gcc64"
-	source "${TOOLCHAIN_CONFIG}/clang-10.0"
-}
-
-function setup_toolchain() {
-	load_toolchain_default
-	if [[ ! -d "${TD}" ]]; then
-		error "$TD don't exist"
-		get_toolchains_default
-	fi
-	if [[ "${CUSTOM_TOOLCHAIN}" ]]; then
-		info "Loading ${TOOLCHAIN_NAME} toolchain"
-		source "${TOOLCHAIN_CONFIG}/${TOOLCHAIN_NAME}"
-	fi
-	if [[ ! -d "$CLANG_ROOT" ]]; then
-	    error "$CLANG_ROOT don't exist"
-		get_toolchains_custom
-	fi
-}
-#
-##############################################
-
-##############################################
-# Main
-
-: '
-for toolchain in $(ls $TOOLCHAIN_CONFIG); do
-        source $TOOLCHAIN_CONFIG/$toolchain
-done
-'
 
 function list_toolchains() {
-	info "Available toolchain config"
+	info "Available toolchains config"
 	for toolchain in $(ls $TOOLCHAIN_CONFIG); do
 		printf "\t$toolchain\n"
+
 	done
 }
 
@@ -614,81 +557,83 @@ function usage() {
 	exit
 }
 
+##BUILD DIR
 BUILD_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source ${BUILD_DIR}/config
-TOOLCHAIN_NAME="default"
-while [[ "$1" != "" ]]; do
+
+while [ "$1" != "" ]; do
 	case $1 in
 		-c)
-			CONFIG=true
+			CUSTOM_CONFIG=true
 			shift
-			if [[ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]]; then
-				error "config file ${1} not found"
+			if [ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]; then
+				warning "config file ${1} not found"
 				usage
+
 			else
-				export BUILD_CONFIG="${1}"
+				CUSTOM_CONFIG_NAME="${1}"
+
 			fi
 			;;
+
 		-t)
 			CUSTOM_TOOLCHAIN=true
 			shift
-			if [[ ! -z "$1" ]]; then
-				if [[ -f "${TOOLCHAIN_CONFIG}/${1}" ]]; then
-					TOOLCHAIN_NAME="${1}"
+			if [ ! -z $1 ]; then
+				if [ -f ${TOOLCHAIN_CONFIG}/${1} ]; then
+					CUSTOM_TOOLCHAIN_NAME="${1}"
+
 				else
-					error "toolchain config \"${1}\" not found\n"
+					warning "toolchain config \"${1}\" not found\n"
 					list_toolchains
 					exit
+
 				fi
 			else
 				list_toolchains
 				printf "\n"
 				usage
+
 			fi
 			;;
+
+		-o)
+			OUTPUT=true
+			shift
+			if [[ -z "$1" ]]; then
+				warning "$1 folder dosen't exist."
+				usage
+
+			else
+				OUTPUT_ZIP_FOLDER="$1"
+
+			fi
+			;;
+
 		-e)
 			EDITION=true
 			;;
-		-o)
-			OUTPUTED=true
-			shift
-			if [[ -z "$1" ]]; then
-				error "$1 folder dosen't exist."
-				usage
-			else
-				export OUTPUT_ZIP_FOLDER="$1"
-			fi
-			;;
+
 		-u)
 			UPDATE=true
 			;;
+
 		-h)
 			usage
 			;;
+
 		*)
-			error "Wrong args"
+			warnings "Wrong args"
 			usage
 			;;
+
 	esac
 	shift
 done
 
-if [[ ! "$CONFIG" ]]; then
+if [ -z ${CUSTOM_CONFIG} ]; then
 	usage
 fi
 
-if [[ "$EDITION" ]]; then
-	export ANY_ARCHIVE=$(echo $ANY_ARCHIVE | sed 's/.zip/-edited.zip/')
-fi
-
-if [[ "$UPDATE" ]]; then
-	git_update
-fi
-
-setup_toolchain
-
-compile_kernel
-
-create_anykernel_zip
-#
-##############################################
+main
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#

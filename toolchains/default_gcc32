@@ -1,0 +1,11 @@
+# GCC 32bit
+## armhf cross compiler directory:
+TOOLCHAIN_ROOT="${TD}/armhf-4.9"
+TOOLCHAIN_NAME="${TOOLCHAIN_ROOT##*/}"
+
+## Source repository:
+TOOLCHAIN_SRC="https://images.kali.org/nethunter/toolchains/google_armhf-4.9.tar.xz"
+TOOLCHAIN_TYPE="wget"
+
+# Compile Sections
+export CROSS_COMPILE_ARM32=${TOOLCHAIN_ROOT}/bin/arm-linux-androideabi-
