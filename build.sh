@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bash Color
+##Bash Color
 green='\e[32m'
 red='\e[31m'
 yellow='\e[33m'
@@ -16,33 +16,26 @@ reset='\e[0m'
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 ##UTILS FUNCTIONS
 #=#=#=#=#=#=#=#=#
-## PAUSE
-function pause() {
-	local message="$@"
-	[ -z $message ] && message="Press [Enter] to continue.."
-	read -p "$message" readEnterkey
-}
-
 function info() {
-	printf "${lcyan}[   INFO   ]${reset} $*${reset}\n"
+	printf "${lcyan}[ INFO ]${reset} $*${reset}\n"
 }
 
 function success() {
 	if [ -z $2 ]; then
-		printf "${lgreen}[ SUCCESS  ]${reset} $1${reset}\n"
+		printf "${lgreen}[ SUCCESS ]${reset} $1${reset}\n"
 
 	else
-		printf "${red}[  FAILED  ]${reset} $1${reset}\n"
+		printf "${red}[ FAILED ]${reset} $1${reset}\n"
 
 	fi
 }
 
 function warning() {
-	printf "${lyellow}[ WARNING  ]${reset} $*${reset}\n"
+	printf "${lyellow}[ WARNING ]${reset} $*${reset}\n"
 }
 
 function error() {
-	printf "${red}[  ERROR   ]${reset} $*${reset}\n"
+	printf "${red}[ ERROR ]${reset}$*${reset}\n"
 	exit
 }
 
@@ -50,7 +43,11 @@ function question() {
 	printf "${yellow}[ QUESTION ]${reset} "
 }
 
-# DETECT OS
+##PAUSE
+function pause() {
+	read -p "Press [Enter] to continue.." readEnterkey
+}
+##DETECT OS
 function check_os() {
 	if [ -f /etc/SUSE-brand ]; then
 		suse=true
@@ -322,10 +319,10 @@ function info_before_compile() {
 	fi
 
 	if [ ! -z ${OUTPUT} ]; then
-		info "Anykernel zip output :\t${OUTPUT_ZIP_FOLDER}"
+		info "Anykernel zip output :\t\t${OUTPUT_ZIP_FOLDER}"
 
 	else
-		info "Anykernel zip output :\t${HOME}"
+		info "Anykernel zip output :\t\t${HOME}"
 
 	fi
 
