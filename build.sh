@@ -28,7 +28,13 @@ function info() {
 }
 
 function success() {
-	printf "${lgreen}[ SUCCESS  ]${reset} $*${reset}\n"
+	if [ -z $2 ]; then
+		printf "${lgreen}[ SUCCESS  ]${reset} $1${reset}\n"
+
+	else
+		printf "${red}[  FAILED  ]${reset} $1${reset}\n"
+
+	fi
 }
 
 function warning() {
@@ -40,18 +46,8 @@ function error() {
 	exit
 }
 
-function check() {
-    if [ $2 == true ]; then
-        printf "${lgreen}[  CHECK   ]${reset} $1${reset}\n"
-
-    else
-        printf "${red}[  CHECK   ]${reset} $1${reset}\n"
-
-    fi
-}
-
 function question() {
-    printf "${yellow}[ QUESTION ]${reset} "
+	printf "${yellow}[ QUESTION ]${reset} "
 }
 
 # DETECT OS
@@ -71,14 +67,13 @@ function setup_env() {
 
 	fi
 
-    check_os
+	check_os
 
-    #TODO# ADD CHECK IF DEPENDENCIES ALREADY INSTALLED
-    #get_dependencies
+	#TODO# ADD CHECK IF DEPENDENCIES ALREADY INSTALLED
+	#get_dependencies
 
-    get_toolchains
+	get_toolchains
 }
-
 ##Update git as needed
 function git_update() {
 	if [ ${CURRENT_BRANCH_ID} == ${LATEST_BRANCH_ID} ]; then
@@ -101,42 +96,43 @@ function git_update() {
 
 ##DOWNLOAD FILE FROM SETTING FILE NAME
 function get_toolchain() {
-    source ${BUILD_DIR}/toolchains/${1}
+	source ${BUILD_DIR}/toolchains/${1}
 
-    local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
-    mkdir -p ${ARCH_DIR}
+	local ARCH_DIR="${BUILD_DIR}/toolchain_archs"
+	mkdir -p ${ARCH_DIR}
 
-    if [ ! -z ${TOOLCHAIN_SRC} ]; then
-        if [ ! -d ${TOOLCHAIN_ROOT} ]; then
-            check "Setting up ${TOOLCHAIN_NAME}" false
+	if [ ! -z ${TOOLCHAIN_SRC} ]; then
+		if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+			success "${TOOLCHAIN_NAME} isn't setup" false
+			info "Setting up ${TOOLCHAIN_NAME}"
 
-            local file_name="${TOOLCHAIN_SRC##*/}"
+			local file_name="${TOOLCHAIN_SRC##*/}"
 
-            if [ -f "${ARCH_DIR}/${file_name}" ]; then
-                warning "Removing file from previous run"
-                rm -f ${ARCH_DIR}/${file_name}
-            fi
+			if [ -f "${ARCH_DIR}/${file_name}" ]; then
+				warning "Removing file from previous run"
+				rm -f ${ARCH_DIR}/${file_name}
+			fi
 
-            if [ ${TOOLCHAIN_SRC_TYPE} == "wget" ]; then
-                info "Downloading ${TOOLCHAIN_NAME}"
+			if [ ${TOOLCHAIN_SRC_TYPE} == "wget" ]; then
+				info "Downloading ${TOOLCHAIN_NAME}"
 
-                wget ${TOOLCHAIN_SRC} --quiet --show-progress -O ${ARCH_DIR}/${file_name}
+				wget ${TOOLCHAIN_SRC} --quiet --show-progress -O ${ARCH_DIR}/${file_name}
 
-                if [ $? -eq 0 ]; then
-                    success "Successfully downloaded ${file_name}"
+				if [ $? -eq 0 ]; then
+					success "Successfully downloaded ${file_name}"
 
-                    if [ ! -d ${TOOLCHAIN_ROOT} ]; then
-                        mkdir -p ${TOOLCHAIN_ROOT}
-                    fi
+					if [ ! -d ${TOOLCHAIN_ROOT} ]; then
+						mkdir -p ${TOOLCHAIN_ROOT}
+					fi
 
-                    extract "${ARCH_DIR}/${file_name}" "$TOOLCHAIN_ROOT"
+					extract "${ARCH_DIR}/${file_name}" "$TOOLCHAIN_ROOT"
 
-                else
-                    error "Download failed"
+				else
+					error "Download failed"
 
-                fi
+				fi
 
-            elif [ ${TOOLCHAIN_SRC_TYPE} == "git" ]; then
+			elif [ ${TOOLCHAIN_SRC_TYPE} == "git" ]; then
 				if [ -d ${ARCH_DIR}/${TOOLCHAIN_NAME} ]; then
 					rm -rf ${ARCH_DIR}/${TOOLCHAIN_NAME}
 				fi
@@ -156,36 +152,42 @@ function get_toolchain() {
 
 				fi
 			fi
-        fi
-    else
-        error "${TOOLCHAIN_NAME} have error in his config"
-    fi
+		elif [ -z "$(ls -A ${TOOLCHAIN_ROOT})" ]; then
+			warning "${TOOLCHAIN_ROOT} is empty"
+			rm -r ${TOOLCHAIN_ROOT}
+			get_toolchain ${1}
+
+		fi
+	else
+		error "${TOOLCHAIN_NAME} have error in his config"
+
+	fi
 }
 
 ##EXTRACT DOWNLOADED FILE IN GET_TOOLCHAIN
 function extract() {
-    file_path=${1}
-    file_name=${file_path##*/}
-    file_extension=${file_name: -6}
-    out_dir=${2}
+	file_path=${1}
+	file_name=${file_path##*/}
+	file_extension=${file_name: -6}
+	out_dir=${2}
 
-    if [ ${file_extension} == tar.xz ]; then
-        info "Extracting ${file_name} in ${out_dir}"
-        tar -xJf ${file_path} -C ${out_dir} --strip-components=1
-        success "${file_name} Successfully extracted\n"
+	if [ ${file_extension} == tar.xz ]; then
+		info "Extracting ${file_name} in ${out_dir}"
+		tar -xJf ${file_path} -C ${out_dir} --strip-components=1
+		success "${file_name} Successfully extracted\n"
 
-    elif [ ${file_extension} == tar.gz ]; then
-        info "Extracting ${file_name} in ${out_dir}"
-        tar -xzf ${file_path} -C ${out_dir} --strip-components=1
-        success "${file_name} Successfully extracted\n"
+	elif [ ${file_extension} == tar.gz ]; then
+		info "Extracting ${file_name} in ${out_dir}"
+		tar -xzf ${file_path} -C ${out_dir} --strip-components=1
+		success "${file_name} Successfully extracted\n"
 
-    fi
+	fi
 }
 
 ##DOWNLOAD DEFAULT TOOLCHAIN
 function get_toolchains() {
 	if [ -z ${CUSTOM_TOOLCHAIN} ]; then
-    	get_toolchain "default_clang"
+		get_toolchain "default_clang"
 
 	else
 		get_toolchain "${CUSTOM_TOOLCHAIN_NAME}"
@@ -250,7 +252,7 @@ function edit_config() {
 	local cc
 	printf "\n"
 
-    ##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
 
@@ -262,7 +264,7 @@ function edit_config() {
 
 	else
 		info "Creating custom config"
-	    make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME $CONFIG_TOOL
+		make -C $KDIR O="$KERNEL_OUT" $cc $CUSTOM_CONFIG_NAME $CONFIG_TOOL
 		cp -r ${KERNEL_OUT} ${CONFIG_FOLDER}
 
 	fi
@@ -312,10 +314,10 @@ function info_before_compile() {
 	info "Config :\t\t\t${CUSTOM_CONFIG_NAME}"
 
 	if [ ! -z ${CUSTOM_TOOLCHAIN} ]; then
-		info "Toolchain :\t\t${CUSTOM_TOOLCHAIN_NAME}"
+		info "Toolchain config :\t\t${CUSTOM_TOOLCHAIN_NAME}"
 
 	else
-		info "Toolchain :\t\tdefault"
+		info "Toolchain config :\t\tdefault"
 
 	fi
 
@@ -354,7 +356,7 @@ function make_kernel() {
 	local confdir=${KDIR}/arch/$ARCH/configs
 	printf "\n"
 
-    ##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
+	##CC=clang cannot be exported. Let's compile with clang if "CC" is set to "clang" in the config
 	if [ "$CC" == "clang" ]; then
 		cc="CC=clang"
 
@@ -380,14 +382,14 @@ function make_kernel() {
 			time make -C $KDIR CC="ccache clang"  -j "$THREADS" ${MAKE_ARGS}
 
 			if [ "$MODULES" = true ]; then
-		    	time make -C $KDIR CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+				time make -C $KDIR CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
 
 			fi
 		else
 			time make -C $KDIR $cc -j "$THREADS" ${MAKE_ARGS}
 
 			if [ "$MODULES" = true ]; then
-		    	time make -C $KDIR $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+				time make -C $KDIR $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
 
 			fi
 		fi
@@ -396,14 +398,14 @@ function make_kernel() {
 			time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" ${MAKE_ARGS}
 
 			if [ "$MODULES" = true ]; then
-		    		time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+					time make -C $KDIR O="$KERNEL_OUT" CC="ccache clang" -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
 
-            fi
+			fi
 		else
 			time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" ${MAKE_ARGS}
 
 			if [ "$MODULES" = true ]; then
-		    		time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
+					time make -C $KDIR O="$KERNEL_OUT" $cc -j "$THREADS" INSTALL_MOD_PATH=$MODULES_OUT modules_install
 
 			fi
 		fi
@@ -531,11 +533,11 @@ function make_aclean() {
 ##MAIN
 #=#=#=#
 function main() {
-    setup_env
+	setup_env
 
 	compile_kernel
 
-    create_anykernel_zip
+	create_anykernel_zip
 }
 
 function list_toolchains() {

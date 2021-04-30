@@ -35,7 +35,6 @@ sample [here](https://github.com/Pixailz/kernel_builder/blob/development/toolcha
 - [op6-op6t-nethunter-kernel](https://github.com/acai66/op6-op6t-nethunter-kernel)
 
 ## TODO
-- handle error
-- fix [android_kernel_oneplus_oneplus6](https://github.com/kimocoder/android_kernel_oneplus_oneplus6) not working ... :'(
-- fix when folder is created but empty (for toolchain)
-- add switch for gcc64/gcc32
+- :sparkles: gcc64/gcc32 : add a switch could be a great features ?
+- :bug: create_anykernel_zip : CURRENT_BRANCH_AUTHOR show name instead of pseudo
+  - anykernel banner : change author according with CURRENT_BRANCH_AUTHOR
