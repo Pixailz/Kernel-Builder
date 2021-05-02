@@ -506,12 +506,12 @@ function make_anykernel_zip() {
 
 	if [ -z ${OUTPUT} ]; then
 		info "Copying ${ANY_ARCHIVE} to ${HOME}"
-		cp ${ANY_ARCHIVE} ${HOME}
+		cp --force ${ANY_ARCHIVE} ${HOME}
 
 	else
 		#*# TO SYNC WITH ARG PARSER
 		info "Copying ${ANY_ARCHIVE} to ${OUTPUT_ZIP_FOLDER}"
-		cp ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
+		cp --force ${ANY_ARCHIVE} ${OUTPUT_ZIP_FOLDER}
 
 	fi
 	cd $BUILD_DIR
