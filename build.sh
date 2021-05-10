@@ -567,7 +567,7 @@ while [ "$1" != "" ]; do
         -c)
             CUSTOM_CONFIG=true
             shift
-            if [ -z "${KDIR}/arch/${ARCH}/configs/${1}" ]; then
+            if [ ! -f "${KDIR}/arch/${ARCH}/configs/${1}" ]; then
                 warning "config file ${1} not found"
                 usage
 
