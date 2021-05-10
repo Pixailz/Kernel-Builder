@@ -569,6 +569,7 @@ while [ "$1" != "" ]; do
             shift
             if [ ! -f "${KDIR}/arch/${ARCH}/configs/${1}" ]; then
                 warning "config file ${1} not found"
+                list_toolchains
                 usage
 
             else
