@@ -316,6 +316,8 @@ function info_before_compile() {
     else
         info "Toolchain config :\t\tdefault"
 
+    info "Toolchain path : \t\t${TOOLCHAIN_PATH}"
+    
     fi
 
     if [ ! -z ${OUTPUT} ]; then
